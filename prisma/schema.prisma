@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  PROJECT_MANAGER
+  DEVELOPER
+}
+
+enum ProjectState {
+  PLANIFICADO
+  EN_PROGRESO
+  PAUSADO
+  COMPLETADO
+  ARCHIVADO
+}
+
+enum TaskPriority {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum TaskType {
+  BUG
+  FEATURE
+  TASK
+  IMPROVEMENT
+}
+
+enum ThemeMode {
+  light
+  dark
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum InvitationChannel {
+  EMAIL
+}
+
+model Profile {
+  id              String           @id @db.Uuid
+  email           String           @unique
+  fullName        String           @map("full_name")
+  role            UserRole         @default(DEVELOPER)
+  avatarInitials  String?          @map("avatar_initials")
+  bio             String           @default("")
+  themePreference ThemeMode        @default(light) @map("theme_preference")
+  lastAccessAt    DateTime?        @map("last_access_at") @db.Timestamptz(6)
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  ownedProjects   Project[]
+  memberships     ProjectMember[]  @relation("ProjectMemberUser")
+  invitedMembers  ProjectMember[]  @relation("ProjectMemberInvitedBy")
+  createdTasks    Task[]           @relation("TaskCreatedBy")
+  comments        TaskComment[]
+  historyEntries  TaskHistory[]
+  savedFilters    SavedFilter[]
+  sentInvitations MemberInvitation[] @relation("InvitationSender")
+
+  @@map("profiles")
+}
+
+model SystemSettings {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  platformName    String    @default("Taskflow") @map("platform_name")
+  maxAttachmentMb Int       @default(10) @map("max_attachment_mb")
+  passwordPolicy  String    @default("Minimo 10 caracteres, mayuscula, numero y simbolo.") @map("password_policy")
+  defaultTheme    ThemeMode @default(light) @map("default_theme")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("system_settings")
+}
+
+model Project {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId       String          @map("owner_id") @db.Uuid
+  name          String
+  description   String
+  startDate     DateTime        @map("start_date") @db.Date
+  endDate       DateTime        @map("end_date") @db.Date
+  state         ProjectState    @default(PLANIFICADO)
+  archived      Boolean         @default(false)
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime        @default(now()) @map("updated_at") @db.Timestamptz(6)
+  owner         Profile         @relation(fields: [ownerId], references: [id])
+  members       ProjectMember[]
+  boards        Board[]
+  labels        Label[]
+  tasks         Task[]
+  savedFilters  SavedFilter[]
+  invitations   MemberInvitation[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId  String   @map("project_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  memberRole UserRole @default(DEVELOPER) @map("member_role")
+  invitedBy  String?  @map("invited_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       Profile  @relation("ProjectMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  inviter    Profile? @relation("ProjectMemberInvitedBy", fields: [invitedBy], references: [id])
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Board {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId  String        @map("project_id") @db.Uuid
+  name       String
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns    BoardColumn[]
+  tasks      Task[]
+
+  @@map("boards")
+}
+
+model BoardColumn {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  boardId    String      @map("board_id") @db.Uuid
+  name       String
+  position   Int
+  color      String      @default("#b8c2d4")
+  wipLimit   Int?        @map("wip_limit")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  board      Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks      Task[]
+  fromMoves  TaskHistory[] @relation("HistoryFromColumn")
+  toMoves    TaskHistory[] @relation("HistoryToColumn")
+
+  @@unique([boardId, position])
+  @@map("board_columns")
+}
+
+model Label {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId  String      @map("project_id") @db.Uuid
+  name       String
+  color      String
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskLabels TaskLabel[]
+  savedFilters SavedFilter[]
+
+  @@map("labels")
+}
+
+model Task {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId         String           @map("project_id") @db.Uuid
+  boardId           String           @map("board_id") @db.Uuid
+  columnId          String           @map("column_id") @db.Uuid
+  title             String
+  description       String           @default("")
+  priority          TaskPriority     @default(MEDIA)
+  type              TaskType         @default(TASK)
+  dueDate           DateTime         @map("due_date") @db.Date
+  estimateHours     Int              @default(0) @map("estimate_hours")
+  spentHours        Int              @default(0) @map("spent_hours")
+  createdBy         String?          @map("created_by") @db.Uuid
+  assigneeIds       String[]         @default([]) @map("assignee_ids") @db.Uuid
+  clonedFromTaskId  String?          @map("cloned_from_task_id") @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  project           Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  board             Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  column            BoardColumn      @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  creator           Profile?         @relation("TaskCreatedBy", fields: [createdBy], references: [id])
+  clonedFromTask    Task?            @relation("TaskCloneChain", fields: [clonedFromTaskId], references: [id])
+  clonedTasks       Task[]           @relation("TaskCloneChain")
+  labels            TaskLabel[]
+  subtasks          TaskSubtask[]
+  comments          TaskComment[]
+  attachments       TaskAttachment[]
+  history           TaskHistory[]
+
+  @@map("tasks")
+}
+
+model TaskLabel {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId   String @map("task_id") @db.Uuid
+  labelId  String @map("label_id") @db.Uuid
+  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label    Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, labelId])
+  @@map("task_labels")
+}
+
+model TaskSubtask {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId      String   @map("task_id") @db.Uuid
+  title       String
+  isCompleted Boolean  @default(false) @map("is_completed")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_subtasks")
+}
+
+model TaskComment {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId     String    @map("task_id") @db.Uuid
+  authorId   String    @map("author_id") @db.Uuid
+  content    String
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @map("updated_at") @db.Timestamptz(6)
+  task       Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author     Profile   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("task_comments")
+}
+
+model TaskAttachment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  fileName  String   @map("file_name")
+  fileUrl   String   @map("file_url")
+  sizeMb    Decimal  @map("size_mb") @db.Decimal(5, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_attachments")
+}
+
+model TaskHistory {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId        String       @map("task_id") @db.Uuid
+  actorId       String       @map("actor_id") @db.Uuid
+  action        String
+  fromColumnId  String?      @map("from_column_id") @db.Uuid
+  toColumnId    String?      @map("to_column_id") @db.Uuid
+  occurredAt    DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  task          Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor         Profile      @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  fromColumn    BoardColumn? @relation("HistoryFromColumn", fields: [fromColumnId], references: [id])
+  toColumn      BoardColumn? @relation("HistoryToColumn", fields: [toColumnId], references: [id])
+
+  @@map("task_history")
+}
+
+model SavedFilter {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId  String        @map("project_id") @db.Uuid
+  ownerId    String        @map("owner_id") @db.Uuid
+  name       String
+  query      String?
+  assigneeId String?       @map("assignee_id") @db.Uuid
+  labelId    String?       @map("label_id") @db.Uuid
+  priority   TaskPriority?
+  taskType   TaskType?     @map("task_type")
+  fromDate   DateTime?     @map("from_date") @db.Date
+  toDate     DateTime?     @map("to_date") @db.Date
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner      Profile       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  label      Label?        @relation(fields: [labelId], references: [id])
+
+  @@map("saved_filters")
+}
+
+model MemberInvitation {
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId  String            @map("project_id") @db.Uuid
+  email      String
+  role       UserRole          @default(DEVELOPER)
+  status     InvitationStatus  @default(PENDING)
+  channel    InvitationChannel @default(EMAIL)
+  invitedBy  String            @map("invited_by") @db.Uuid
+  token      String            @unique
+  message    String?
+  expiresAt  DateTime          @map("expires_at") @db.Timestamptz(6)
+  acceptedAt DateTime?         @map("accepted_at") @db.Timestamptz(6)
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inviter    Profile           @relation("InvitationSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
+  @@map("member_invitations")
+}

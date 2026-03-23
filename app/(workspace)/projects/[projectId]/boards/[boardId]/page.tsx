@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { PlusIcon } from "@/components/taskflow/icons";
+import { ProjectBoardSwitcher } from "@/components/taskflow/project-board-switcher";
 import { TaskCard } from "@/components/taskflow/task-card";
+import { TaskCreator } from "@/components/taskflow/task-creator";
 import { TaskflowService } from "@/lib/application/taskflow-service";
 import type { TaskFilters, TaskPriority, TaskType } from "@/lib/domain/models";
 
@@ -76,10 +77,12 @@ export default async function BoardPage({
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="taskflow-chip">{activeFilterCount} filtros activos</div>
-          <button type="button" className="taskflow-button-primary">
-            <PlusIcon className="h-5 w-5" />
-            Nueva tarea
-          </button>
+          <TaskCreator
+            projectId={data.project.id}
+            boardId={data.board.id}
+            columns={data.board.columns}
+            users={data.users}
+          />
         </div>
       </div>
 
@@ -158,6 +161,13 @@ export default async function BoardPage({
           className="taskflow-input"
         />
       </form>
+
+      <ProjectBoardSwitcher
+        projectId={data.project.id}
+        activeBoardId={data.board.id}
+        boards={data.projectBoards}
+        filters={data.filters}
+      />
 
       <div className="grid gap-5 xl:grid-cols-4">
         {data.columns.map((column) => (

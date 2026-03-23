@@ -2,6 +2,7 @@ import type {
   Board,
   Label,
   MemberInvitation,
+  ProjectNotification,
   Project,
   SystemSettings,
   TaskflowSnapshot,
@@ -436,6 +437,39 @@ function buildInvitations(): MemberInvitation[] {
   return [baseInvitation, resentInvitation, acceptedInvitation];
 }
 
+function buildNotifications(): ProjectNotification[] {
+  return [
+    {
+      id: "notification-project-web-task",
+      projectId: "project-web",
+      recipientId: "user-admin",
+      actorId: "user-pm",
+      boardId: "board-web-main",
+      taskId: "task-auth",
+      kind: "TASK_CREATED",
+      title: "Nueva tarea: Implementar login",
+      message: "Se creo una nueva tarea en el tablero principal del proyecto web.",
+      linkHref: "/projects/project-web/boards/board-web-main?query=Implementar%20login",
+      isRead: false,
+      createdAt: "2026-03-22T10:30:00.000Z",
+    },
+    {
+      id: "notification-project-mobile-board",
+      projectId: "project-mobile",
+      recipientId: "user-pm",
+      actorId: "user-admin",
+      boardId: "board-mobile-main",
+      kind: "BOARD_CREATED",
+      title: "Nuevo tablero en Portal movil cliente",
+      message: "El proyecto movil tiene un tablero listo para seguimiento.",
+      linkHref: "/projects/project-mobile/boards/board-mobile-main",
+      isRead: true,
+      readAt: "2026-03-22T11:00:00.000Z",
+      createdAt: "2026-03-22T09:15:00.000Z",
+    },
+  ];
+}
+
 export function buildMockSnapshot(): TaskflowSnapshot {
   const mainTasks = buildWebTasks();
 
@@ -463,5 +497,6 @@ export function buildMockSnapshot(): TaskflowSnapshot {
     boards,
     tasks: [...mainTasks, archiveTask],
     invitations: buildInvitations(),
+    notifications: buildNotifications(),
   };
 }

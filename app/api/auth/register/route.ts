@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { TaskflowService } from "@/lib/application/taskflow-service";
+import { buildRouteErrorResponse } from "@/lib/api/route-errors";
 
 const service = new TaskflowService();
 
@@ -19,16 +19,8 @@ export async function POST(request: Request) {
       confirmPassword: body.confirmPassword ?? "",
     });
 
-    return NextResponse.json(result, { status: 201 });
+    return Response.json(result, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "No fue posible completar el registro.",
-      },
-      { status: 400 },
-    );
+    return buildRouteErrorResponse(error);
   }
 }

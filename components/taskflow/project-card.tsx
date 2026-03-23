@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ProjectCardView } from "@/lib/domain/models";
+import { ProjectManager } from "@/components/taskflow/project-manager";
 import { percentage, projectStateLabel } from "@/lib/utils/format";
 
 export function ProjectCard({ project }: { project: ProjectCardView }) {
@@ -63,6 +64,12 @@ export function ProjectCard({ project }: { project: ProjectCardView }) {
           </div>
         ) : null}
       </div>
+
+      {project.canManage ? (
+        <div className="mt-5 border-t border-[color:var(--color-border)] pt-5">
+          <ProjectManager project={project} />
+        </div>
+      ) : null}
     </article>
   );
 }

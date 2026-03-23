@@ -1,0 +1,42 @@
+import type { CreateProjectInput, UpdateProjectInput } from "@/lib/domain/models";
+import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
+
+export class ProjectCommandService {
+  constructor(
+    private readonly repository: TaskflowRepository,
+    private readonly notificationPublisher: ProjectEventPublisher,
+  ) {}
+
+  async createProject(input: Omit<CreateProjectInput, "ownerId">, ownerId: string) {
+    const result = await this.repository.createProject({
+      ...input,
+      ownerId,
+    });
+
+    await this.notificationPublisher.publish({
+      kind: "PROJECT_CREATED",
+      projectId: result.project.id,
+      actorId: ownerId,
+      boardId: result.board.id,
+    });
+
+    return result;
+  }
+
+  async updateProject(input: UpdateProjectInput, actorId: string) {
+    const project = await this.repository.updateProject(input);
+
+    await this.notificationPublisher.publish({
+      kind: "PROJECT_UPDATED",
+      projectId: project.id,
+      actorId,
+    });
+
+    return project;
+  }
+
+  async deleteProject(projectId: string) {
+    await this.repository.deleteProject(projectId);
+  }
+}

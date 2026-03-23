@@ -1,9 +1,12 @@
+import { requireAuthenticatedUser } from "@/lib/auth/current-user";
+import { SettingsForm } from "@/components/taskflow/settings-form";
 import { TaskflowService } from "@/lib/application/taskflow-service";
 import { formatDateTime, roleLabel } from "@/lib/utils/format";
 
 const service = new TaskflowService();
 
 export default async function SettingsPage() {
+  const currentUser = await requireAuthenticatedUser();
   const data = await service.getSettingsPageData();
 
   return (
@@ -50,6 +53,7 @@ export default async function SettingsPage() {
         <section className="taskflow-panel p-6">
           <h2 className="text-2xl font-semibold">Parámetros globales</h2>
           <div className="mt-6 space-y-5">
+            <SettingsForm settings={data.settings} />
             <div>
               <p className="text-sm text-[color:var(--color-text-secondary)]">
                 Política de contraseñas
@@ -88,7 +92,7 @@ export default async function SettingsPage() {
                 Crear, editar y desactivar cuentas desde el panel administrativo.
               </p>
             </div>
-            <div className="taskflow-chip">{data.currentUser.role}</div>
+            <div className="taskflow-chip">{currentUser.role}</div>
           </div>
 
           <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-[color:var(--color-border)]">

@@ -3,16 +3,43 @@
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function LoginForm({ emailHint }: { emailHint: string }) {
+export function LoginForm({
+  emailHint,
+  usesSupabaseAuth,
+}: {
+  emailHint: string;
+  usesSupabaseAuth: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState(emailHint);
-  const [password, setPassword] = useState("Taskflow2026*");
+  const [password, setPassword] = useState(usesSupabaseAuth ? "" : "Taskflow2026*");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError(payload?.error ?? "No fue posible iniciar sesion.");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
 
     startTransition(() => {
       router.push("/projects");
+      router.refresh();
     });
   }
 
@@ -30,6 +57,7 @@ export function LoginForm({ emailHint }: { emailHint: string }) {
           onChange={(event) => setEmail(event.target.value)}
           className="taskflow-input"
           placeholder="correo@taskflow.dev"
+          required
         />
       </div>
 
@@ -52,6 +80,12 @@ export function LoginForm({ emailHint }: { emailHint: string }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className="taskflow-input"
+          placeholder={
+            usesSupabaseAuth
+              ? "Tu contrasena registrada"
+              : "Taskflow2026*"
+          }
+          required
         />
       </div>
 
@@ -60,9 +94,25 @@ export function LoginForm({ emailHint }: { emailHint: string }) {
         Recordarme en este dispositivo
       </label>
 
-      <button type="submit" className="taskflow-button-primary w-full">
-        Ingresar
+      <button
+        type="submit"
+        disabled={loading}
+        className="taskflow-button-primary w-full disabled:opacity-60"
+      >
+        {loading ? "Ingresando..." : "Ingresar"}
       </button>
+
+      {error ? (
+        <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
+          {error}
+        </div>
+      ) : null}
+
+      {usesSupabaseAuth ? (
+        <div className="rounded-2xl bg-[color:var(--color-surface-muted)] px-4 py-3 text-sm text-[color:var(--color-text-secondary)]">
+          Si acabas de registrarte, primero confirma el correo enviado por Supabase.
+        </div>
+      ) : null}
     </form>
   );
 }

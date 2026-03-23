@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getAuthenticatedUser } from "@/lib/auth/current-user";
 import { LoginForm } from "@/components/taskflow/login-form";
 import { TaskflowLogo } from "@/components/taskflow/logo";
 import { TaskflowService } from "@/lib/application/taskflow-service";
@@ -14,10 +16,16 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const authenticatedUser = await getAuthenticatedUser();
+
+  if (authenticatedUser) {
+    redirect("/projects");
+  }
+
   const params = await searchParams;
-  const { suggestedUser } = await service.getLoginData();
+  const { suggestedUser, usesSupabaseAuth } = await service.getLoginData();
   const registeredMessage = readParam(params.registered);
-  const emailHint = readParam(params.email, suggestedUser.email);
+  const emailHint = readParam(params.email, suggestedUser?.email ?? "");
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(66,86,244,0.11),_transparent_32%),linear-gradient(180deg,_var(--color-bg-accent),_var(--color-bg))] px-6 py-12">
@@ -76,11 +84,13 @@ export default async function LoginPage({
 
             <div className="mb-6 text-center">
               <p className="text-sm text-[color:var(--color-text-secondary)]">
-                Acceso de demostracion sugerido: {emailHint}
+                {usesSupabaseAuth
+                  ? "Usa una cuenta registrada en Supabase Auth y confirma tu correo antes de ingresar."
+                  : `Acceso de demostracion sugerido: ${emailHint}`}
               </p>
             </div>
 
-            <LoginForm emailHint={emailHint} />
+            <LoginForm emailHint={emailHint} usesSupabaseAuth={usesSupabaseAuth} />
 
             <p className="mt-6 text-center text-sm text-[color:var(--color-text-secondary)]">
               ¿No tienes una cuenta?{" "}

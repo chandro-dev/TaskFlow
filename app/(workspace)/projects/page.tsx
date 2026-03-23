@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { requireAuthenticatedUser } from "@/lib/auth/current-user";
+import { BoardCreator } from "@/components/taskflow/board-creator";
 import { InvitationManager } from "@/components/taskflow/invitation-manager";
+import { ProjectCreator } from "@/components/taskflow/project-creator";
 import { ProjectCard } from "@/components/taskflow/project-card";
-import { ArrowRightIcon, PlusIcon, SearchIcon } from "@/components/taskflow/icons";
+import { ArrowRightIcon, SearchIcon } from "@/components/taskflow/icons";
 import { TaskflowService } from "@/lib/application/taskflow-service";
 import { formatDate, percentage, projectStateLabel } from "@/lib/utils/format";
 
@@ -19,10 +22,11 @@ export default async function ProjectsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const currentUser = await requireAuthenticatedUser();
   const params = await searchParams;
   const query = readParam(params.query);
   const state = readParam(params.state, "ALL");
-  const data = await service.getProjectsPageData({ query, state });
+  const data = await service.getProjectsPageData({ query, state }, currentUser);
   const highlights = await service.getSearchHighlights(undefined, {
     query: query || undefined,
   });
@@ -45,11 +49,8 @@ export default async function ProjectsPage({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <div className="taskflow-chip">{data.currentUser.role}</div>
-            <button type="button" className="taskflow-button-primary">
-              <PlusIcon className="h-5 w-5" />
-              Nuevo proyecto
-            </button>
+            <div className="taskflow-chip">{currentUser.role}</div>
+            <ProjectCreator />
           </div>
         </div>
 
@@ -119,9 +120,42 @@ export default async function ProjectsPage({
 
       <aside className="space-y-6">
         <InvitationManager
-          project={data.selectedProject}
+          projects={data.projects}
+          users={data.users}
+          defaultProjectId={data.selectedProject?.id}
           invitations={data.invitations}
         />
+
+        {data.selectedProject ? (
+          <section className="taskflow-panel p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Tableros del proyecto</h2>
+                <p className="mt-2 text-sm text-[color:var(--color-text-secondary)]">
+                  RF-03 activo con creacion de tableros y navegacion directa.
+                </p>
+              </div>
+              <div className="taskflow-chip">{data.selectedProjectBoards.length}</div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {data.selectedProjectBoards.map((board) => (
+                <Link
+                  key={board.id}
+                  href={`/projects/${data.selectedProject.id}/boards/${board.id}`}
+                  className="flex items-center justify-between rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium"
+                >
+                  {board.name}
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-5">
+              <BoardCreator projectId={data.selectedProject.id} />
+            </div>
+          </section>
+        ) : null}
 
         <section className="taskflow-panel p-6">
           <h2 className="text-xl font-semibold">Búsqueda y filtros</h2>

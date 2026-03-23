@@ -3,6 +3,13 @@ export type UserRole = "ADMIN" | "PROJECT_MANAGER" | "DEVELOPER";
 export type ThemeMode = "light" | "dark";
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 export type InvitationChannel = "EMAIL";
+export type NotificationKind =
+  | "PROJECT_CREATED"
+  | "PROJECT_UPDATED"
+  | "BOARD_CREATED"
+  | "TASK_CREATED"
+  | "MEMBER_INVITED"
+  | "MEMBER_JOINED";
 
 export type ProjectState =
   | "PLANIFICADO"
@@ -133,6 +140,56 @@ export interface RegisterUserResult {
   requiresEmailConfirmation: boolean;
 }
 
+export interface CreateProjectInput {
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  ownerId: string;
+  state?: ProjectState;
+}
+
+export interface CreateProjectResult {
+  project: Project;
+  board: Board;
+}
+
+export interface UpdateProjectInput {
+  projectId: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  state: ProjectState;
+  archived: boolean;
+}
+
+export interface CreateBoardInput {
+  projectId: string;
+  name: string;
+}
+
+export interface CreateTaskInput {
+  projectId: string;
+  boardId: string;
+  actorId: string;
+  columnId?: string;
+  title: string;
+  description: string;
+  priority?: TaskPriority;
+  type: TaskType;
+  dueDate: string;
+  estimateHours: number;
+  assigneeIds?: string[];
+}
+
+export interface UpdateSystemSettingsInput {
+  platformName: string;
+  maxAttachmentMb: number;
+  passwordPolicy: string;
+  defaultTheme: ThemeMode;
+}
+
 export interface MemberInvitation {
   id: string;
   projectId: string;
@@ -147,6 +204,42 @@ export interface MemberInvitation {
   acceptedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProjectNotification {
+  id: string;
+  projectId: string;
+  recipientId: string;
+  actorId?: string;
+  boardId?: string;
+  taskId?: string;
+  kind: NotificationKind;
+  title: string;
+  message: string;
+  linkHref: string;
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface ProjectNotificationEvent {
+  kind: NotificationKind;
+  projectId: string;
+  actorId: string;
+  boardId?: string;
+  taskId?: string;
+}
+
+export interface CreateProjectNotificationInput {
+  projectId: string;
+  recipientId: string;
+  actorId?: string;
+  boardId?: string;
+  taskId?: string;
+  kind: NotificationKind;
+  title: string;
+  message: string;
+  linkHref: string;
 }
 
 export interface TaskFilters {
@@ -167,19 +260,24 @@ export interface TaskflowSnapshot {
   boards: Board[];
   tasks: Task[];
   invitations: MemberInvitation[];
+  notifications: ProjectNotification[];
 }
 
 export interface ProjectCardView {
   id: string;
   name: string;
   description: string;
+  startDate: string;
+  endDate: string;
   state: ProjectState;
   archived: boolean;
+  ownerId: string;
   progress: number;
   completedTasks: number;
   totalTasks: number;
   members: UserProfile[];
   defaultBoardId: string;
+  canManage: boolean;
 }
 
 export interface BoardTaskView extends Task {
@@ -195,11 +293,41 @@ export interface BoardColumnView extends BoardColumn {
 export interface BoardPageView {
   project: Project;
   board: Board;
+  projectBoards: Board[];
   columns: BoardColumnView[];
   currentUser: UserProfile;
   users: UserProfile[];
   availableLabels: Label[];
   filters: TaskFilters;
+}
+
+export interface BoardSummaryView {
+  id: string;
+  projectId: string;
+  name: string;
+  columnsCount: number;
+  totalTasks: number;
+  completedTasks: number;
+}
+
+export interface ProjectBoardGroupView {
+  project: ProjectCardView;
+  boards: BoardSummaryView[];
+}
+
+export interface BoardsPageView {
+  currentUser: UserProfile;
+  groups: ProjectBoardGroupView[];
+}
+
+export interface ProjectNotificationView extends ProjectNotification {
+  project: Project | null;
+  actor: UserProfile | null;
+}
+
+export interface NotificationCenterView {
+  notifications: ProjectNotificationView[];
+  unreadCount: number;
 }
 
 export interface SettingsView {
@@ -214,6 +342,14 @@ export interface ProjectInvitationView extends MemberInvitation {
 }
 
 export interface CreateInvitationInput {
+  projectId: string;
+  email: string;
+  role: UserRole;
+  invitedBy: string;
+  message?: string;
+}
+
+export interface InvitationDraft {
   projectId: string;
   email: string;
   role: UserRole;

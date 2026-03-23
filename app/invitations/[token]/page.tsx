@@ -10,6 +10,7 @@ export default async function InvitationPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  console.log(token);
   const invitation = await service.getInvitationByToken(token);
 
   if (!invitation) {

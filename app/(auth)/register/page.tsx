@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getAuthenticatedUser } from "@/lib/auth/current-user";
 import { RegisterForm } from "@/components/taskflow/register-form";
 import { TaskflowLogo } from "@/components/taskflow/logo";
 import { TaskflowService } from "@/lib/application/taskflow-service";
@@ -5,6 +7,12 @@ import { TaskflowService } from "@/lib/application/taskflow-service";
 const service = new TaskflowService();
 
 export default async function RegisterPage() {
+  const authenticatedUser = await getAuthenticatedUser();
+
+  if (authenticatedUser) {
+    redirect("/projects");
+  }
+
   const { passwordPolicy } = await service.getRegisterData();
 
   return (

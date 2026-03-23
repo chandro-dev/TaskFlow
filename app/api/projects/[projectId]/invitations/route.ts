@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import type { UserRole } from "@/lib/domain/models";
 import { TaskflowService } from "@/lib/application/taskflow-service";
+import { requireProjectMemberRouteUser } from "@/lib/api/route-authorization";
+import { buildRouteErrorResponse } from "@/lib/api/route-errors";
 
 const service = new TaskflowService();
 
@@ -19,24 +20,35 @@ export async function POST(
   const { projectId } = await context.params;
   const body = (await request.json()) as {
     email?: string;
+    emails?: string[];
     role?: string;
     message?: string;
   };
 
-  if (!body.email?.trim()) {
-    return NextResponse.json(
-      { error: "El correo es obligatorio." },
-      { status: 400 },
+  const emails = [
+    ...(body.email?.trim() ? [body.email.trim().toLowerCase()] : []),
+    ...((body.emails ?? []).map((email) => email.trim().toLowerCase())),
+  ];
+
+  if (!emails.length) {
+    return Response.json(
+      { error: "Debes indicar al menos un correo." },
+      { status: 422 },
     );
   }
 
-  const invitation = await service.createInvitation({
-    projectId,
-    email: body.email.trim().toLowerCase(),
-    role: parseRole(body.role ?? "DEVELOPER"),
-    invitedBy: "user-admin",
-    message: body.message?.trim(),
-  });
+  try {
+    const currentUser = await requireProjectMemberRouteUser(projectId);
+    const invitations = await service.createInvitations({
+      projectId,
+      emails,
+      role: parseRole(body.role ?? "DEVELOPER"),
+      invitedBy: currentUser.id,
+      message: body.message?.trim(),
+    });
 
-  return NextResponse.json({ invitation }, { status: 201 });
+    return Response.json({ invitations }, { status: 201 });
+  } catch (error) {
+    return buildRouteErrorResponse(error);
+  }
 }

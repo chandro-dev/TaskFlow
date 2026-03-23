@@ -5,6 +5,7 @@ create type public.project_state as enum ('PLANIFICADO', 'EN_PROGRESO', 'PAUSADO
 create type public.task_priority as enum ('BAJA', 'MEDIA', 'ALTA', 'URGENTE');
 create type public.task_type as enum ('BUG', 'FEATURE', 'TASK', 'IMPROVEMENT');
 create type public.theme_mode as enum ('light', 'dark');
+create type public.notification_kind as enum ('PROJECT_CREATED', 'PROJECT_UPDATED', 'BOARD_CREATED', 'TASK_CREATED', 'MEMBER_INVITED', 'MEMBER_JOINED');
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -158,6 +159,22 @@ create table if not exists public.saved_filters (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.project_notifications (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  recipient_id uuid not null references public.profiles(id) on delete cascade,
+  actor_id uuid references public.profiles(id),
+  board_id uuid references public.boards(id) on delete cascade,
+  task_id uuid references public.tasks(id) on delete cascade,
+  kind public.notification_kind not null,
+  title text not null,
+  message text not null,
+  link_href text not null,
+  is_read boolean not null default false,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -209,3 +226,5 @@ create index if not exists idx_tasks_due_date on public.tasks(due_date);
 create index if not exists idx_tasks_priority on public.tasks(priority);
 create index if not exists idx_task_history_task on public.task_history(task_id);
 create index if not exists idx_saved_filters_owner on public.saved_filters(owner_id);
+create index if not exists idx_project_notifications_recipient_state on public.project_notifications(recipient_id, is_read, created_at desc);
+create index if not exists idx_project_notifications_project_created on public.project_notifications(project_id, created_at desc);

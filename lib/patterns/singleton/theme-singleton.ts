@@ -1,5 +1,4 @@
 "use client";
-
 import type { ThemeMode } from "@/lib/domain/models";
 import { getThemeVariables } from "@/lib/patterns/abstract-factory/theme-factory";
 

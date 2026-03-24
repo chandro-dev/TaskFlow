@@ -90,3 +90,13 @@ export function SunIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function LogoutIcon(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M10 4.5H7.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2H10" />
+      <path d="M14 8.5 18 12l-4 3.5" />
+      <path d="M18 12H9.5" />
+    </svg>
+  );
+}

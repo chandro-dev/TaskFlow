@@ -1,5 +1,7 @@
 import type { Task, TaskPriority, TaskType } from "@/lib/domain/models";
 
+// Pattern traceability: Factory Method.
+// Task creation varies by task type, especially in defaults such as priority.
 interface TaskFactoryInput {
   id: string;
   projectId: string;
@@ -139,6 +141,8 @@ class StandardTaskFactory extends TaskFactory {
 }
 
 export function createTaskFactory(type: TaskType) {
+  // Consumers depend only on the task type and do not know which concrete
+  // factory is responsible for producing the initial task draft.
   switch (type) {
     case "BUG":
       return new BugTaskFactory();

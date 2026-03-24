@@ -20,6 +20,8 @@ import type { TaskflowRepository } from "@/lib/domain/repositories";
 import { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
 
 export function createApplicationServices(repository: TaskflowRepository) {
+  // Commands publish domain events through a single publisher so notifications
+  // stay decoupled from project, board and task use cases.
   const notificationPublisher = new ProjectEventPublisher([
     new ProjectNotificationSubscriber(repository),
   ]);

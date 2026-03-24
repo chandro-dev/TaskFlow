@@ -9,6 +9,8 @@ export class SupabaseAuthCommand {
   constructor(private readonly client: SupabaseClient) {}
 
   async registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
+    // Builder validates and normalizes raw registration input before any call
+    // to Supabase Auth or profile creation.
     const registration = new UserRegistrationBuilder(input)
       .normalize()
       .validate()
@@ -33,6 +35,7 @@ export class SupabaseAuthCommand {
       throw new Error(error.message);
     }
 
+    // Factory Method keeps the default profile strategy outside the auth flow.
     const user = createUserProfileFactory().create(registration);
 
     if (data.user?.id) {
@@ -63,6 +66,8 @@ export class SupabaseAuthCommand {
       throw new Error(error?.message ?? "No fue posible crear el usuario en Supabase.");
     }
 
+    // The same profile factory is reused here so mock and Supabase registration
+    // end with the same user shape.
     const user = createUserProfileFactory().create(registration);
     user.id = data.user.id;
 

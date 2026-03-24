@@ -1,5 +1,8 @@
 import type { MemberInvitation } from "@/lib/domain/models";
 
+// Pattern traceability: Builder.
+// Invitations change through a controlled lifecycle: pending, accepted,
+// revoked, refreshed token and expiry updates.
 export class MemberInvitationBuilder {
   private readonly draft: MemberInvitation;
 

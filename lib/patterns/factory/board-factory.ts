@@ -1,5 +1,8 @@
 import type { Board, BoardColumn } from "@/lib/domain/models";
 
+// Pattern traceability: Factory Method.
+// Board creation encapsulates the default Kanban structure so project creation
+// does not manually rebuild columns every time.
 export interface BoardFactoryResult {
   board: Board;
   columns: BoardColumn[];

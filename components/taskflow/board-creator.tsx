@@ -3,6 +3,7 @@
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/taskflow/icons";
+import { AppModalShell } from "@/components/taskflow/app-modal-shell";
 
 export function BoardCreator({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -10,6 +11,16 @@ export function BoardCreator({ projectId }: { projectId: string }) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function closeModal() {
+    if (loading) {
+      return;
+    }
+
+    setOpen(false);
+    setName("");
+    setError(null);
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,8 +42,7 @@ export function BoardCreator({ projectId }: { projectId: string }) {
     }
 
     setLoading(false);
-    setOpen(false);
-    setName("");
+    closeModal();
 
     startTransition(() => {
       router.refresh();
@@ -41,50 +51,59 @@ export function BoardCreator({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-3">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
-        className="taskflow-button-primary w-full justify-center"
+        onClick={() => setOpen(true)}
+        className="taskflow-button-primary justify-center"
       >
         <PlusIcon className="h-5 w-5" />
         Nuevo tablero
       </button>
 
       {open ? (
-        <form onSubmit={onSubmit} className="taskflow-panel space-y-4 p-5">
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Nombre del tablero"
-            className="taskflow-input"
-            required
-          />
+        <AppModalShell
+          eyebrow="Tableros"
+          title="Crear tablero"
+          description="Define un nuevo tablero para este proyecto y entra directamente a trabajarlo."
+          onClose={closeModal}
+          maxWidthClass="max-w-2xl"
+        >
+          <form onSubmit={onSubmit} className="space-y-5">
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Nombre del tablero"
+              className="taskflow-input"
+              required
+            />
 
-          {error ? (
-            <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
-              {error}
+            {error ? (
+              <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                disabled={loading}
+                className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="taskflow-button-primary justify-center disabled:opacity-60"
+              >
+                {loading ? "Creando..." : "Crear tablero"}
+              </button>
             </div>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="taskflow-button-primary justify-center disabled:opacity-60"
-            >
-              Crear tablero
-            </button>
-          </div>
-        </form>
+          </form>
+        </AppModalShell>
       ) : null}
-    </div>
+    </>
   );
 }

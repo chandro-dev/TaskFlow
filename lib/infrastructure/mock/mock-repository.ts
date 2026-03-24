@@ -66,6 +66,10 @@ export class MockTaskflowRepository implements TaskflowRepository {
     return this.store.markAllNotificationsRead(recipientId);
   }
 
+  async clearNotifications(recipientId: string) {
+    return this.store.clearNotifications(recipientId);
+  }
+
   async updateSettings(input: Parameters<TaskflowRepository["updateSettings"]>[0]) {
     return this.store.updateSettings(input);
   }

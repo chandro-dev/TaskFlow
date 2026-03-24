@@ -19,6 +19,9 @@ function hasConfiguredSupabaseEnv() {
 }
 
 export function createTaskflowRepository(): TaskflowRepository {
+  // The app always depends on the repository contract. This factory is the
+  // only place that decides whether the runtime should use Supabase or the
+  // in-memory mock fallback.
   if (hasConfiguredSupabaseEnv()) {
     return new SupabaseTaskflowRepository();
   }

@@ -1,5 +1,8 @@
 import type { RegisterUserInput, UserProfile, UserRole } from "@/lib/domain/models";
 
+// Pattern traceability: Factory Method.
+// Registration always starts with a concrete profile strategy, currently the
+// default developer profile, while hiding that decision from callers.
 abstract class UserProfileFactory {
   create(input: RegisterUserInput): UserProfile {
     const normalizedName = input.name.trim();

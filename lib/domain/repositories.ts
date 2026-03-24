@@ -45,6 +45,7 @@ export interface TaskflowRepository {
     recipientId: string,
   ): Promise<ProjectNotification>;
   markAllNotificationsRead(recipientId: string): Promise<void>;
+  clearNotifications(recipientId: string): Promise<void>;
   updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings>;
   updateUserThemePreference(userId: string, mode: ThemeMode): Promise<UserProfile>;
   createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>;

@@ -104,11 +104,15 @@ export async function getSupabaseClientOrThrow(): Promise<SupabaseClient> {
   const { url, anonKey } = resolveSupabaseConfig();
   const accessToken = await resolveAccessTokenFromSession();
 
+  // Anonymous access is still useful for routes that only need public reads or
+  // that run before a user has established a local app session.
   if (!accessToken) {
     return createBaseClient(url, anonKey);
   }
 
   return createClient(url, anonKey, {
+    // Every request gets its own token-aware client so Supabase RLS evaluates
+    // permissions with the real authenticated user instead of a shared client.
     accessToken: async () => accessToken,
     auth: {
       persistSession: false,

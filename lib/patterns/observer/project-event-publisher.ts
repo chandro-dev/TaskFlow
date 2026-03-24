@@ -4,6 +4,9 @@ export interface ProjectEventSubscriber {
   handle(event: ProjectNotificationEvent): Promise<void>;
 }
 
+// Pattern traceability: Observer.
+// Command services publish project events here instead of depending directly on
+// notification infrastructure.
 export class ProjectEventPublisher {
   constructor(private readonly subscribers: ProjectEventSubscriber[]) {}
 

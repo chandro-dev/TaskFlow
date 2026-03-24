@@ -50,6 +50,8 @@ function buildCandidateReason(
   selectedProject: ProjectCardView,
   invitedUserIds: Set<string>,
 ) {
+  // The UI intentionally shows every user in the system and explains why a
+  // person can or cannot receive a new invitation for the selected project.
   if (selectedProject.members.some((member) => member.id === user.id)) {
     return {
       selectable: false,
@@ -138,6 +140,8 @@ export function InvitationManager({
       return [];
     }
 
+    // Sorting and annotating candidates in one place keeps the render branch
+    // simple and avoids duplicating membership checks in JSX.
     return [...users]
       .sort((left, right) => left.name.localeCompare(right.name, "es"))
       .map((user) => ({

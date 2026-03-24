@@ -88,4 +88,17 @@ export class SupabaseNotificationCommand {
       );
     }
   }
+
+  async clearNotifications(recipientId: string) {
+    const { error } = await this.client
+      .from("project_notifications")
+      .delete()
+      .eq("recipient_id", recipientId);
+
+    if (error) {
+      throw new Error(
+        error.message ?? "No fue posible limpiar las notificaciones.",
+      );
+    }
+  }
 }

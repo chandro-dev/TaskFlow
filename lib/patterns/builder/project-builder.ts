@@ -1,5 +1,7 @@
 import type { CreateProjectInput, Project } from "@/lib/domain/models";
 
+// Pattern traceability: Builder.
+// Projects are validated and normalized before becoming a persisted aggregate.
 export class ProjectBuilder {
   private readonly draft: CreateProjectInput;
 

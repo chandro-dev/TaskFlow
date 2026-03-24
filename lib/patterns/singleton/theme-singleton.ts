@@ -1,11 +1,14 @@
 "use client";
 import type { ThemeMode } from "@/lib/domain/models";
-import { getThemeVariables } from "@/lib/patterns/abstract-factory/theme-factory";
+import { createThemeArtifacts } from "@/lib/patterns/abstract-factory/theme-factory";
 
 const STORAGE_KEY = "taskflow-theme";
 
 type ThemeListener = (mode: ThemeMode) => void;
 
+// Pattern traceability: Singleton.
+// Theme changes must be global, so the UI relies on one shared client-side
+// instance that owns the current mode and the CSS token mutation.
 export class ThemeSingleton {
   private static instance: ThemeSingleton | null = null;
   private listeners = new Set<ThemeListener>();
@@ -64,13 +67,16 @@ export class ThemeSingleton {
   }
 
   private applyTheme(mode: ThemeMode) {
-    const variables = getThemeVariables(mode);
+    // Abstract Factory provides the theme artifacts for the selected family.
+    // The singleton consumes only the resulting CSS variables and applies them
+    // globally to the current document.
+    const { cssVariables } = createThemeArtifacts(mode);
     const root = document.documentElement;
 
     // The singleton is the only place that mutates CSS theme tokens, so every
     // client component sees the same visual state immediately after a change.
     root.dataset.theme = mode;
-    for (const [key, value] of Object.entries(variables)) {
+    for (const [key, value] of Object.entries(cssVariables)) {
       root.style.setProperty(key, value);
     }
   }

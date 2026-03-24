@@ -1,5 +1,8 @@
 import type { Project, Subtask, Task } from "@/lib/domain/models";
 
+// Pattern traceability: Prototype.
+// A clone starts from an existing aggregate and then applies technical
+// overrides, which is clearer than rebuilding every field from scratch.
 export class TaskPrototype {
   constructor(private readonly source: Task) {}
 

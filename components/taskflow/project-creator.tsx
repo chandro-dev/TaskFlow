@@ -3,28 +3,41 @@
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/taskflow/icons";
+import { AppModalShell } from "@/components/taskflow/app-modal-shell";
 import {
   ProjectFormFields,
   type ProjectFormValues,
 } from "@/components/taskflow/project-form-fields";
+
+const emptyProjectForm: ProjectFormValues = {
+  name: "",
+  description: "",
+  startDate: "",
+  endDate: "",
+};
 
 export function ProjectCreator() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<ProjectFormValues>({
-    name: "",
-    description: "",
-    startDate: "",
-    endDate: "",
-  });
+  const [form, setForm] = useState<ProjectFormValues>(emptyProjectForm);
 
   function updateField<K extends keyof ProjectFormValues>(
     key: K,
     value: ProjectFormValues[K],
   ) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function closeModal() {
+    if (loading) {
+      return;
+    }
+
+    setOpen(false);
+    setError(null);
+    setForm(emptyProjectForm);
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -47,22 +60,16 @@ export function ProjectCreator() {
     }
 
     setLoading(false);
-    setOpen(false);
-    setForm({
-      name: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-    });
+    closeModal();
 
     startTransition(() => router.refresh());
   }
 
   return (
-    <div className="flex flex-col items-end gap-3">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => setOpen(true)}
         className="taskflow-button-primary"
       >
         <PlusIcon className="h-5 w-5" />
@@ -70,36 +77,42 @@ export function ProjectCreator() {
       </button>
 
       {open ? (
-        <form
-          onSubmit={onSubmit}
-          className="taskflow-panel w-full max-w-xl space-y-4 p-5"
+        <AppModalShell
+          eyebrow="Proyectos"
+          title="Crear proyecto"
+          description="Define la base del proyecto y deja listo su tablero Kanban inicial desde un solo flujo."
+          onClose={closeModal}
+          maxWidthClass="max-w-3xl"
         >
-          <ProjectFormFields form={form} onChange={updateField} />
+          <form onSubmit={onSubmit} className="space-y-5">
+            <ProjectFormFields form={form} onChange={updateField} />
 
-          {error ? (
-            <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
-              {error}
+            {error ? (
+              <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                disabled={loading}
+                className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="taskflow-button-primary justify-center disabled:opacity-60"
+              >
+                {loading ? "Creando..." : "Crear proyecto"}
+              </button>
             </div>
-          ) : null}
-
-          <div className="flex flex-wrap justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="taskflow-button-primary justify-center disabled:opacity-60"
-            >
-              Crear proyecto
-            </button>
-          </div>
-        </form>
+          </form>
+        </AppModalShell>
       ) : null}
-    </div>
+    </>
   );
 }

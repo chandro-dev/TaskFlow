@@ -193,6 +193,8 @@ export class SupabaseTaskCommand {
       priority: input.priority,
     });
 
+    // Factory decides the base task shape by type. Builder then enriches the
+    // draft with assignments before the RPC persists it atomically.
     const builder = new TaskBuilder(task);
 
     for (const assigneeId of input.assigneeIds ?? []) {
@@ -203,6 +205,8 @@ export class SupabaseTaskCommand {
   }
 
   private serializeSubtasks(subtasks: TaskSubtaskInput[]) {
+    // Supabase RPCs expect snake_case keys because jsonb_to_recordset maps
+    // directly to SQL column names.
     return subtasks.map((subtask) => ({
       id: subtask.id ?? null,
       title: subtask.title,

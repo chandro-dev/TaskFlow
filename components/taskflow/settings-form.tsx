@@ -32,6 +32,8 @@ export function SettingsForm({
   });
 
   useEffect(() => {
+    // Singleton keeps the selected theme synchronized across the whole client
+    // app, so settings and navbar always point to the same visual state.
     ThemeSingleton.getInstance().initialize(currentUser.themePreference);
   }, [currentUser.themePreference]);
 

@@ -5,6 +5,9 @@ import type {
   UserRole,
 } from "@/lib/domain/models";
 
+// Pattern traceability: Factory Method.
+// Invitation creation varies by channel. The app currently uses IN_APP, but
+// the factory isolates that decision from services and repositories.
 interface InvitationSeed extends CreateInvitationInput {
   id?: string;
   token?: string;

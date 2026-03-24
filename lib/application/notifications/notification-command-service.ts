@@ -10,4 +10,8 @@ export class NotificationCommandService {
   async markAllNotificationsRead(recipientId: string) {
     await this.repository.markAllNotificationsRead(recipientId);
   }
+
+  async clearNotifications(recipientId: string) {
+    await this.repository.clearNotifications(recipientId);
+  }
 }

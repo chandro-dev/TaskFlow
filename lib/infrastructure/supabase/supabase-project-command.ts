@@ -26,6 +26,8 @@ export class SupabaseProjectCommand {
   async createProject(input: CreateProjectInput): Promise<CreateProjectResult> {
     await this.ensureOwnerProfile(input.ownerId);
 
+    // Builder validates project data first. The board factory then provides the
+    // default Kanban board and columns that will be persisted for the project.
     const projectDraft = new ProjectBuilder(input).normalize().validate();
     const tempProjectId = crypto.randomUUID();
     const builtProject = projectDraft.buildProject(tempProjectId);

@@ -46,6 +46,7 @@ export function NotificationCenter({ initialCenter }: NotificationCenterProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [notifications, setNotifications] = useState(() =>
     sortNotifications(initialCenter.notifications),
   );
@@ -136,6 +137,26 @@ export function NotificationCenter({ initialCenter }: NotificationCenterProps) {
     }
   }
 
+  async function clearAllNotifications() {
+    if (!notifications.length) {
+      return;
+    }
+
+    setClearing(true);
+    setNotifications([]);
+    setUnreadCount(0);
+
+    const response = await fetch("/api/notifications/clear", {
+      method: "POST",
+    }).catch(() => null);
+
+    setClearing(false);
+
+    if (!response?.ok) {
+      startTransition(() => router.refresh());
+    }
+  }
+
   return (
     <div className="relative">
       <button
@@ -164,14 +185,24 @@ export function NotificationCenter({ initialCenter }: NotificationCenterProps) {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={markAllAsRead}
-              disabled={loading || unreadCount === 0}
-              className="text-xs font-medium text-[color:var(--color-text-secondary)] disabled:opacity-50"
-            >
-              Marcar todo
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                disabled={loading || clearing || unreadCount === 0}
+                className="text-xs font-medium text-[color:var(--color-text-secondary)] disabled:opacity-50"
+              >
+                Marcar todo
+              </button>
+              <button
+                type="button"
+                onClick={clearAllNotifications}
+                disabled={loading || clearing || notifications.length === 0}
+                className="text-xs font-medium text-[color:var(--color-danger)] disabled:opacity-50"
+              >
+                {clearing ? "Limpiando..." : "Limpiar"}
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 max-h-[26rem] space-y-3 overflow-y-auto pr-1">

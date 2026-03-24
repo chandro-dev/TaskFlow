@@ -1,5 +1,8 @@
 import type { RegisterUserInput } from "@/lib/domain/models";
 
+// Pattern traceability: Builder.
+// Registration needs normalization plus validation before persistence, so the
+// builder turns raw form input into a safe domain-ready payload.
 export class UserRegistrationBuilder {
   private readonly draft: RegisterUserInput;
 

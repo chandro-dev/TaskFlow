@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import type { BoardTaskView } from "@/lib/domain/models";
-import {
-  CalendarIcon,
-  FilterIcon,
-} from "@/components/taskflow/icons";
+import { CalendarIcon, FilterIcon } from "@/components/taskflow/icons";
 import {
   formatDate,
   percentage,
@@ -55,7 +52,7 @@ export function TaskCard({
       <div className="mt-5 grid gap-3 text-sm text-[color:var(--color-text-secondary)]">
         <div className="flex items-center gap-2">
           <FilterIcon className="h-4 w-4" />
-          {task.subtasks.length} subtareas · {percentage(task.subtaskProgress)}
+          {task.subtasks.length} subtareas - {percentage(task.subtaskProgress)}
         </div>
         <div className="flex items-center gap-2">
           <CalendarIcon className="h-4 w-4" />

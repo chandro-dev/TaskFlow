@@ -12,7 +12,9 @@ export function LoginForm({
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(emailHint);
-  const [password, setPassword] = useState(usesSupabaseAuth ? "" : "Taskflow2026*");
+  const [password, setPassword] = useState(
+    usesSupabaseAuth ? "" : "Taskflow2026*",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +49,7 @@ export function LoginForm({
     <form onSubmit={onSubmit} className="taskflow-panel space-y-8 p-8 md:p-10">
       <div className="space-y-3">
         <label htmlFor="email" className="text-base font-medium">
-          Correo electrónico
+          Correo electronico
         </label>
         <input
           id="email"
@@ -64,13 +66,13 @@ export function LoginForm({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <label htmlFor="password" className="text-base font-medium">
-            Contraseña
+            Contrasena
           </label>
           <a
             href="#"
             className="text-sm text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-accent)]"
           >
-            ¿Olvidaste tu contraseña?
+            Olvidaste tu contrasena?
           </a>
         </div>
         <input
@@ -81,9 +83,7 @@ export function LoginForm({
           onChange={(event) => setPassword(event.target.value)}
           className="taskflow-input"
           placeholder={
-            usesSupabaseAuth
-              ? "Tu contrasena registrada"
-              : "Taskflow2026*"
+            usesSupabaseAuth ? "Tu contrasena registrada" : "Taskflow2026*"
           }
           required
         />
@@ -110,7 +110,8 @@ export function LoginForm({
 
       {usesSupabaseAuth ? (
         <div className="rounded-2xl bg-[color:var(--color-surface-muted)] px-4 py-3 text-sm text-[color:var(--color-text-secondary)]">
-          Si acabas de registrarte, primero confirma el correo enviado por Supabase.
+          Si tu proyecto de Supabase aun exige confirmacion, revisa el correo
+          enviado antes de iniciar sesion.
         </div>
       ) : null}
     </form>

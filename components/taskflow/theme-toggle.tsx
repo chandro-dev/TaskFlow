@@ -9,6 +9,8 @@ export function ThemeToggle({ defaultMode }: { defaultMode: ThemeMode }) {
   const [mode, setMode] = useState<ThemeMode>(() =>
     typeof window === "undefined"
       ? defaultMode
+      // Singleton guarantees that every toggle instance reads the same
+      // currently active theme mode.
       : ThemeSingleton.getInstance().initialize(defaultMode),
   );
 

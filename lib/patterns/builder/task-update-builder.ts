@@ -1,5 +1,8 @@
 import type { Task, TaskSubtaskInput, UpdateTaskInput } from "@/lib/domain/models";
 
+// Pattern traceability: Builder.
+// Editing a task means merging core fields, assignees and checklist state while
+// preserving the identity of existing subtasks whenever possible.
 export class TaskUpdateBuilder {
   private readonly draft: Task;
   private readonly existingSubtaskIds: Set<string>;

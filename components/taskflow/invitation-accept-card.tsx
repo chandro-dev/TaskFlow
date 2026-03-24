@@ -30,9 +30,11 @@ export function InvitationAcceptCard({
       return;
     }
 
-    setStatus("Invitacion aceptada. Ya puedes volver al panel de proyectos.");
     setLoading(false);
-    startTransition(() => router.refresh());
+    startTransition(() => {
+      router.push("/projects");
+      router.refresh();
+    });
   }
 
   return (

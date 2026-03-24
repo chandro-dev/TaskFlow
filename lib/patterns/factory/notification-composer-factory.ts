@@ -5,6 +5,9 @@ import type {
   TaskflowSnapshot,
 } from "@/lib/domain/models";
 
+// Pattern traceability: Factory Method.
+// Each notification kind has a dedicated composer so message/title/link rules
+// stay open to extension without filling a single giant conditional service.
 type NotificationComposer = {
   compose(
     event: ProjectNotificationEvent,

@@ -117,6 +117,11 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     );
   }
 
+  async clearNotifications(recipientId: string) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseNotificationCommand(client).clearNotifications(recipientId);
+  }
+
   async updateSettings(input: Parameters<TaskflowRepository["updateSettings"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseSettingsCommand(client).updateSettings(input);

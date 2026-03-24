@@ -14,6 +14,8 @@ export class ProjectCommandService {
       ownerId,
     });
 
+    // Observer traceability: the command publishes a domain event and does not
+    // know which subscribers will turn it into notifications.
     await this.notificationPublisher.publish({
       kind: "PROJECT_CREATED",
       projectId: result.project.id,

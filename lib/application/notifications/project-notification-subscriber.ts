@@ -16,6 +16,8 @@ export class ProjectNotificationSubscriber implements ProjectEventSubscriber {
 
   async handle(event: ProjectNotificationEvent) {
     const snapshot = await this.snapshotLoader.load();
+    // Factory Method resolves the composer that knows how to translate this
+    // event kind into user-facing notification payloads.
     const notifications = createNotificationComposer(event.kind).compose(
       event,
       snapshot,

@@ -1,5 +1,9 @@
 import type { ThemeMode } from "@/lib/domain/models";
 
+// Pattern traceability: Abstract Factory.
+// The app has one family of visual artifacts per theme mode. The concrete
+// factories decide the palette, while callers only ask for the artifacts that
+// belong to "light" or "dark".
 export interface ThemePalette {
   background: string;
   backgroundAccent: string;
@@ -14,6 +18,11 @@ export interface ThemePalette {
   warning: string;
   danger: string;
   avatarGradient: string;
+}
+
+export interface ThemeArtifacts {
+  palette: ThemePalette;
+  cssVariables: Record<string, string>;
 }
 
 export interface ThemeFactory {
@@ -64,9 +73,7 @@ export function createThemeFactory(mode: ThemeMode): ThemeFactory {
   return mode === "dark" ? new DarkThemeFactory() : new LightThemeFactory();
 }
 
-export function getThemeVariables(mode: ThemeMode) {
-  const palette = createThemeFactory(mode).createPalette();
-
+function mapPaletteToCssVariables(palette: ThemePalette) {
   return {
     "--color-bg": palette.background,
     "--color-bg-accent": palette.backgroundAccent,
@@ -82,4 +89,22 @@ export function getThemeVariables(mode: ThemeMode) {
     "--color-danger": palette.danger,
     "--avatar-gradient": palette.avatarGradient,
   } as Record<string, string>;
+}
+
+export function createThemeArtifacts(mode: ThemeMode): ThemeArtifacts {
+  // This is the main Abstract Factory entry point used by the app shell and
+  // the theme singleton. Both consumers ask for the same theme family and
+  // receive the concrete palette plus the CSS variables derived from it.
+  const palette = createThemeFactory(mode).createPalette();
+
+  return {
+    palette,
+    cssVariables: mapPaletteToCssVariables(palette),
+  };
+}
+
+export function getThemeVariables(mode: ThemeMode) {
+  // Backward-compatible helper kept as a thin wrapper around the explicit
+  // abstract-factory entry point.
+  return createThemeArtifacts(mode).cssVariables;
 }

@@ -22,6 +22,8 @@ export class TaskflowService {
   private readonly services: ReturnType<typeof createApplicationServices>;
 
   constructor(repository: TaskflowRepository = createTaskflowRepository()) {
+    // This facade keeps route handlers thin. They talk to one entry point while
+    // the real work stays split into focused application services.
     this.repository = repository;
     this.services = createApplicationServices(this.repository);
   }
@@ -110,6 +112,10 @@ export class TaskflowService {
 
   async markAllNotificationsRead(recipientId: string) {
     return this.services.notificationCommands.markAllNotificationsRead(recipientId);
+  }
+
+  async clearNotifications(recipientId: string) {
+    return this.services.notificationCommands.clearNotifications(recipientId);
   }
 
   async getSearchHighlights(projectId?: string, filters: TaskFilters = {}) {

@@ -1,5 +1,8 @@
 import type { MemberInvitation } from "@/lib/domain/models";
 
+// Pattern traceability: Prototype.
+// Re-sent invitations inherit the original business data while receiving a new
+// token and timestamps for a fresh delivery cycle.
 export class InvitationPrototype {
   constructor(private readonly source: MemberInvitation) {}
 

@@ -1,7 +1,4 @@
-import type {
-  CloneTaskRequestInput,
-  Subtask,
-} from "@/lib/domain/models";
+import type { CloneTaskRequestInput, Subtask } from "@/lib/domain/models";
 import type { TaskflowRepository } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import { SubtaskPrototype, TaskPrototype } from "@/lib/patterns/prototype/clone";
@@ -20,7 +17,10 @@ export class TaskCloneService {
     if (!sourceTask) {
       throw new Error("La tarea origen no existe o ya no esta disponible.");
     }
-    //Clonado de tareas profundo: se clona la tarea junto con sus subtareas seleccionadas, creando nuevos identificadores para cada una y permitiendo reasignar a las mismas o diferentes personas. El prototipo se encarga de preservar la estructura original mientras se generan los clones técnicos necesarios para la nueva tarea.
+
+    // Pattern traceability: Prototype.
+    // Deep task cloning starts from the source task and its selected subtasks,
+    // generating fresh technical identities while preserving business shape.
     const clonedSubtasks = this.buildClonedSubtasks(sourceTask.subtasks, input);
 
     // The prototype creates a technical draft that preserves the source
@@ -68,8 +68,10 @@ export class TaskCloneService {
     input: CloneTaskRequestInput,
   ) {
     const selectedSubtaskIds = new Set(
-      (input.subtaskIds?.length ? input.subtaskIds : sourceSubtasks.map((item) => item.id))
-        .filter(Boolean),
+      (input.subtaskIds?.length
+        ? input.subtaskIds
+        : sourceSubtasks.map((item) => item.id)
+      ).filter(Boolean),
     );
 
     const selectedSourceSubtasks = sourceSubtasks.filter((subtask) =>

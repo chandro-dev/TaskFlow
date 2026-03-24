@@ -3,6 +3,9 @@ import type {
   ProjectNotification,
 } from "@/lib/domain/models";
 
+// Pattern traceability: Builder.
+// Notifications are normalized before persistence so title, message and read
+// state stay consistent regardless of the event source.
 export class ProjectNotificationBuilder {
   private readonly draft: CreateProjectNotificationInput;
   private readAt?: string;

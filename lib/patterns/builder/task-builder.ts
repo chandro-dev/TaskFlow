@@ -6,6 +6,9 @@ import type {
   TaskHistoryEntry,
 } from "@/lib/domain/models";
 
+// Pattern traceability: Builder.
+// Tasks are assembled in several steps (assignees, labels, history, subtasks),
+// so this builder keeps that incremental construction out of services.
 export class TaskBuilder {
   private readonly draft: Task;
 

@@ -43,6 +43,9 @@ export class MockTaskflowStore {
   }
 
   static getInstance() {
+    // Pattern traceability: Singleton.
+    // The mock store behaves like one shared in-memory database during local
+    // execution so all requests observe the same evolving snapshot.
     if (!this.instance) {
       this.instance = new MockTaskflowStore();
     }
@@ -95,6 +98,8 @@ export class MockTaskflowStore {
 
   createProject(input: CreateProjectInput): CreateProjectResult {
     const projectId = crypto.randomUUID();
+    // Builder validates project input. Board factory injects the default Kanban
+    // structure without duplicating setup logic in the store.
     const project = new ProjectBuilder(input).normalize().validate().buildProject(projectId);
     const { board } = createBoardFactory().create(projectId);
 
@@ -195,6 +200,8 @@ export class MockTaskflowStore {
       throw new Error("El tablero no tiene columnas disponibles.");
     }
 
+    // Factory Method chooses the base task flavor. Builder then enriches the
+    // task with history, assignees and subtasks.
     const baseTask = createTaskFactory(input.type).create({
       id: crypto.randomUUID(),
       projectId: input.projectId,
@@ -414,6 +421,12 @@ export class MockTaskflowStore {
     );
   }
 
+  clearNotifications(recipientId: string) {
+    this.snapshot.notifications = this.snapshot.notifications.filter(
+      (notification) => notification.recipientId !== recipientId,
+    );
+  }
+
   updateSettings(input: UpdateSystemSettingsInput): SystemSettings {
     this.snapshot.settings = {
       platformName: input.platformName.trim(),
@@ -442,6 +455,8 @@ export class MockTaskflowStore {
   }
 
   createInvitation(input: CreateInvitationInput) {
+    // Invitation factory creates the base invitation by channel and the builder
+    // moves it into the pending lifecycle state with message and expiry.
     const invitation = new MemberInvitationBuilder(
       createInvitationFactory("IN_APP").create(input),
     )

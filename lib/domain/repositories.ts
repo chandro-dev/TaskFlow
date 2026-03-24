@@ -7,6 +7,7 @@ import type {
   CreateInvitationInput,
   CreateTaskInput,
   MemberInvitation,
+  MoveTaskInput,
   ProjectNotification,
   Project,
   RegisterUserInput,

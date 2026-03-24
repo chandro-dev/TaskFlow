@@ -40,6 +40,10 @@ export class MockTaskflowRepository implements TaskflowRepository {
     return this.store.createTask(input);
   }
 
+  async moveTask(input: Parameters<TaskflowRepository["moveTask"]>[0]) {
+    return this.store.moveTask(input);
+  }
+
   async createNotifications(
     input: Parameters<TaskflowRepository["createNotifications"]>[0],
   ) {

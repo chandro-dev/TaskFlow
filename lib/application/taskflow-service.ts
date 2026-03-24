@@ -3,6 +3,7 @@ import type {
   CreateInvitationInput,
   CreateProjectInput,
   CreateTaskInput,
+  MoveTaskInput,
   TaskFilters,
   UpdateProjectInput,
   UpdateSystemSettingsInput,
@@ -56,6 +57,10 @@ export class TaskflowService {
 
   async createTask(input: CreateTaskInput) {
     return this.services.taskCommands.createTask(input);
+  }
+
+  async moveTask(input: MoveTaskInput) {
+    return this.services.taskMoves.moveTask(input);
   }
 
   async getProjectsPageData(

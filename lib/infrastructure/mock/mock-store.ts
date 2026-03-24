@@ -6,6 +6,7 @@ import type {
   CreateInvitationInput,
   CreateTaskInput,
   MemberInvitation,
+  MoveTaskInput,
   ProjectNotification,
   RegisterUserInput,
   RegisterUserResult,
@@ -214,6 +215,35 @@ export class MockTaskflowStore {
 
     const task = builder.build();
     this.snapshot.tasks.unshift(task);
+    return structuredClone(task);
+  }
+
+  moveTask(input: MoveTaskInput): Task {
+    const task = this.snapshot.tasks.find((item) => item.id === input.taskId);
+
+    if (!task || task.projectId !== input.projectId || task.boardId !== input.boardId) {
+      throw new Error("Tarea no encontrada en el tablero actual.");
+    }
+
+    const board = this.snapshot.boards.find((item) => item.id === input.boardId);
+    const destinationColumn = board?.columns.find((column) => column.id === input.toColumnId);
+
+    if (!board || !destinationColumn) {
+      throw new Error("La columna de destino no existe dentro del tablero.");
+    }
+
+    const previousColumnId = task.columnId;
+    task.columnId = input.toColumnId;
+    task.updatedAt = new Date().toISOString();
+    task.history.unshift({
+      id: crypto.randomUUID(),
+      actorId: input.actorId,
+      action: `Movio la tarea a ${destinationColumn.name}`,
+      occurredAt: task.updatedAt,
+      fromColumnId: previousColumnId,
+      toColumnId: input.toColumnId,
+    });
+
     return structuredClone(task);
   }
 

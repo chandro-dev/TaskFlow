@@ -11,6 +11,7 @@ import { ProjectCommandService } from "@/lib/application/projects/project-comman
 import { ProjectQueryService } from "@/lib/application/projects/project-query-service";
 import { SettingsCommandService } from "@/lib/application/settings/settings-command-service";
 import { TaskCommandService } from "@/lib/application/tasks/task-command-service";
+import { TaskMoveService } from "@/lib/application/tasks/task-move-service";
 import { WorkspaceQueryService } from "@/lib/application/workspace/workspace-query-service";
 import type { TaskflowRepository } from "@/lib/domain/repositories";
 import { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
@@ -33,6 +34,7 @@ export function createApplicationServices(repository: TaskflowRepository) {
     notificationCommands: new NotificationCommandService(repository),
     settingsCommands: new SettingsCommandService(repository),
     taskCommands: new TaskCommandService(repository, notificationPublisher),
+    taskMoves: new TaskMoveService(repository),
     workspaceQueries: new WorkspaceQueryService(repository),
   };
 }

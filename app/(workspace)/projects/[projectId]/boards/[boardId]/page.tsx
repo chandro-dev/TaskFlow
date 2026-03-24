@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProjectBoardSwitcher } from "@/components/taskflow/project-board-switcher";
-import { TaskCard } from "@/components/taskflow/task-card";
 import { TaskCreator } from "@/components/taskflow/task-creator";
+import { TaskKanbanBoard } from "@/components/taskflow/task-kanban-board";
 import { TaskflowService } from "@/lib/application/taskflow-service";
 import type { TaskFilters, TaskPriority, TaskType } from "@/lib/domain/models";
 
@@ -169,37 +169,11 @@ export default async function BoardPage({
         filters={data.filters}
       />
 
-      <div className="grid gap-5 xl:grid-cols-4">
-        {data.columns.map((column) => (
-          <section key={column.id} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: column.color }}
-                />
-                <h2 className="text-2xl font-semibold">{column.name}</h2>
-              </div>
-              <div className="text-sm text-[color:var(--color-text-secondary)]">
-                {column.tasks.length}
-                {column.wipLimit && column.wipLimit < 999
-                  ? ` / WIP ${column.wipLimit}`
-                  : ""}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {column.tasks.length > 0 ? (
-                column.tasks.map((task) => <TaskCard key={task.id} task={task} />)
-              ) : (
-                <div className="taskflow-panel p-6 text-sm leading-7 text-[color:var(--color-text-secondary)]">
-                  No hay tareas con los filtros actuales en esta columna.
-                </div>
-              )}
-            </div>
-          </section>
-        ))}
-      </div>
+      <TaskKanbanBoard
+        projectId={data.project.id}
+        boardId={data.board.id}
+        initialColumns={data.columns}
+      />
     </div>
   );
 }

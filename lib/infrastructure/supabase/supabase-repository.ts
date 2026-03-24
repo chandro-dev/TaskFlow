@@ -80,6 +80,11 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     return new SupabaseTaskCommand(client).createTask(input);
   }
 
+  async moveTask(input: Parameters<TaskflowRepository["moveTask"]>[0]) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseTaskCommand(client).moveTask(input);
+  }
+
   async createNotifications(
     input: Parameters<TaskflowRepository["createNotifications"]>[0],
   ) {

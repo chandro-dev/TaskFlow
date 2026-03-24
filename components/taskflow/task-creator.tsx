@@ -3,6 +3,8 @@
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/taskflow/icons";
+import { TaskModalShell } from "@/components/taskflow/task-modal-shell";
+import { TaskCreationForm } from "@/components/taskflow/task-creation-form";
 import type { BoardColumn, TaskPriority, TaskType, UserProfile } from "@/lib/domain/models";
 
 type FormState = {
@@ -12,7 +14,7 @@ type FormState = {
   priority: TaskPriority;
   dueDate: string;
   estimateHours: string;
-  assigneeId: string;
+  assigneeIds: string[];
   columnId: string;
 };
 
@@ -36,14 +38,23 @@ export function TaskCreator({
     description: "",
     type: "TASK",
     priority: "MEDIA",
-    dueDate: "",
-    estimateHours: "4",
-    assigneeId: "",
-    columnId: columns[0]?.id ?? "",
+      dueDate: "",
+      estimateHours: "4",
+      assigneeIds: [],
+      columnId: columns[0]?.id ?? "",
   });
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function toggleAssignee(userId: string) {
+    setForm((current) => ({
+      ...current,
+      assigneeIds: current.assigneeIds.includes(userId)
+        ? current.assigneeIds.filter((item) => item !== userId)
+        : [...current.assigneeIds, userId],
+    }));
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -57,7 +68,7 @@ export function TaskCreator({
       body: JSON.stringify({
         ...form,
         estimateHours: Number(form.estimateHours),
-        assigneeIds: form.assigneeId ? [form.assigneeId] : [],
+        assigneeIds: form.assigneeIds,
       }),
     });
 
@@ -78,7 +89,7 @@ export function TaskCreator({
       priority: "MEDIA",
       dueDate: "",
       estimateHours: "4",
-      assigneeId: "",
+      assigneeIds: [],
       columnId: columns[0]?.id ?? "",
     });
 
@@ -87,119 +98,54 @@ export function TaskCreator({
 
   return (
     <div className="flex flex-col items-end gap-3">
-      <button type="button" onClick={() => setOpen((current) => !current)} className="taskflow-button-primary">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="taskflow-button-primary"
+      >
         <PlusIcon className="h-5 w-5" />
         Nueva tarea
       </button>
 
       {open ? (
-        <form onSubmit={onSubmit} className="taskflow-panel w-full max-w-3xl space-y-4 p-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <input
-              value={form.title}
-              onChange={(event) => updateField("title", event.target.value)}
-              placeholder="Titulo de la tarea"
-              className="taskflow-input"
-              required
+        <TaskModalShell
+          title="Crear nueva tarea"
+          description="Usa un flujo mas claro para definir estado inicial, responsables y esfuerzo estimado antes de incorporarla al tablero."
+          onClose={() => setOpen(false)}
+        >
+          <form onSubmit={onSubmit} className="space-y-6">
+            <TaskCreationForm
+              form={form}
+              columns={columns}
+              users={users}
+              onFieldChange={updateField}
+              onAssigneeToggle={toggleAssignee}
             />
-            <select
-              value={form.columnId}
-              onChange={(event) => updateField("columnId", event.target.value)}
-              className="taskflow-input"
-              required
-            >
-              {columns.map((column) => (
-                <option key={column.id} value={column.id}>
-                  {column.name}
-                </option>
-              ))}
-            </select>
-          </div>
 
-          <textarea
-            value={form.description}
-            onChange={(event) => updateField("description", event.target.value)}
-            placeholder="Descripcion funcional"
-            className="taskflow-input min-h-28 resize-none"
-            required
-          />
+            {error ? (
+              <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
+                {error}
+              </div>
+            ) : null}
 
-          <div className="grid gap-4 md:grid-cols-4">
-            <select
-              value={form.type}
-              onChange={(event) => updateField("type", event.target.value as TaskType)}
-              className="taskflow-input"
-            >
-              <option value="TASK">Task</option>
-              <option value="BUG">Bug</option>
-              <option value="FEATURE">Feature</option>
-              <option value="IMPROVEMENT">Improvement</option>
-            </select>
-            <select
-              value={form.priority}
-              onChange={(event) =>
-                updateField("priority", event.target.value as TaskPriority)
-              }
-              className="taskflow-input"
-            >
-              <option value="BAJA">Baja</option>
-              <option value="MEDIA">Media</option>
-              <option value="ALTA">Alta</option>
-              <option value="URGENTE">Urgente</option>
-            </select>
-            <input
-              type="date"
-              value={form.dueDate}
-              onChange={(event) => updateField("dueDate", event.target.value)}
-              className="taskflow-input"
-              required
-            />
-            <input
-              type="number"
-              min="1"
-              value={form.estimateHours}
-              onChange={(event) => updateField("estimateHours", event.target.value)}
-              className="taskflow-input"
-              required
-            />
-          </div>
-
-          <select
-            value={form.assigneeId}
-            onChange={(event) => updateField("assigneeId", event.target.value)}
-            className="taskflow-input"
-          >
-            <option value="">Sin responsable</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
-
-          {error ? (
-            <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">
-              {error}
+            <div className="flex justify-end gap-3 border-t border-[color:var(--color-border)] pt-5">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="taskflow-button-primary justify-center disabled:opacity-60"
+              >
+                {loading ? "Creando..." : "Crear tarea"}
+              </button>
             </div>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="taskflow-button-primary justify-center disabled:opacity-60"
-            >
-              Crear tarea
-            </button>
-          </div>
-        </form>
+          </form>
+        </TaskModalShell>
       ) : null}
     </div>
   );

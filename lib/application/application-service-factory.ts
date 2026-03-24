@@ -10,8 +10,11 @@ import { ProjectNotificationSubscriber } from "@/lib/application/notifications/p
 import { ProjectCommandService } from "@/lib/application/projects/project-command-service";
 import { ProjectQueryService } from "@/lib/application/projects/project-query-service";
 import { SettingsCommandService } from "@/lib/application/settings/settings-command-service";
+import { ThemePreferenceCommandService } from "@/lib/application/settings/theme-preference-command-service";
 import { TaskCommandService } from "@/lib/application/tasks/task-command-service";
+import { TaskCloneService } from "@/lib/application/tasks/task-clone-service";
 import { TaskMoveService } from "@/lib/application/tasks/task-move-service";
+import { TaskUpdateService } from "@/lib/application/tasks/task-update-service";
 import { WorkspaceQueryService } from "@/lib/application/workspace/workspace-query-service";
 import type { TaskflowRepository } from "@/lib/domain/repositories";
 import { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
@@ -33,8 +36,11 @@ export function createApplicationServices(repository: TaskflowRepository) {
     notificationQueries: new NotificationQueryService(repository),
     notificationCommands: new NotificationCommandService(repository),
     settingsCommands: new SettingsCommandService(repository),
+    themePreferenceCommands: new ThemePreferenceCommandService(repository),
     taskCommands: new TaskCommandService(repository, notificationPublisher),
+    taskClones: new TaskCloneService(repository),
     taskMoves: new TaskMoveService(repository),
+    taskUpdates: new TaskUpdateService(repository),
     workspaceQueries: new WorkspaceQueryService(repository),
   };
 }

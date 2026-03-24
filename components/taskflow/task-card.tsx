@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { BoardTaskView } from "@/lib/domain/models";
 import {
   CalendarIcon,
@@ -10,7 +11,13 @@ import {
   taskTypeLabel,
 } from "@/lib/utils/format";
 
-export function TaskCard({ task }: { task: BoardTaskView }) {
+export function TaskCard({
+  task,
+  actions,
+}: {
+  task: BoardTaskView;
+  actions?: ReactNode;
+}) {
   return (
     <article className="taskflow-panel min-h-[16rem] p-5">
       <div className="flex items-start justify-between gap-4">
@@ -72,6 +79,12 @@ export function TaskCard({ task }: { task: BoardTaskView }) {
           {task.spentHours}/{task.estimateHours}h
         </div>
       </div>
+
+      {actions ? (
+        <div className="mt-4 border-t border-[color:var(--color-border)] pt-4">
+          {actions}
+        </div>
+      ) : null}
     </article>
   );
 }

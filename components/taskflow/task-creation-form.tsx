@@ -1,17 +1,14 @@
 "use client";
 
-import type { BoardColumn, TaskPriority, TaskType, UserProfile } from "@/lib/domain/models";
-
-type FormState = {
-  title: string;
-  description: string;
-  type: TaskType;
-  priority: TaskPriority;
-  dueDate: string;
-  estimateHours: string;
-  assigneeIds: string[];
-  columnId: string;
-};
+import { TaskSubtaskEditor } from "@/components/taskflow/task-subtask-editor";
+import type {
+  BoardColumn,
+  TaskPriority,
+  TaskSubtaskInput,
+  TaskType,
+  UserProfile,
+} from "@/lib/domain/models";
+import type { TaskFormState } from "@/components/taskflow/task-form-state";
 
 export function TaskCreationForm({
   form,
@@ -19,12 +16,25 @@ export function TaskCreationForm({
   users,
   onFieldChange,
   onAssigneeToggle,
+  onSubtaskAdd,
+  onSubtaskChange,
+  onSubtaskRemove,
 }: {
-  form: FormState;
+  form: TaskFormState;
   columns: BoardColumn[];
   users: UserProfile[];
-  onFieldChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  onFieldChange: <K extends keyof TaskFormState>(
+    key: K,
+    value: TaskFormState[K],
+  ) => void;
   onAssigneeToggle: (userId: string) => void;
+  onSubtaskAdd: () => void;
+  onSubtaskChange: <K extends keyof TaskSubtaskInput>(
+    index: number,
+    key: K,
+    value: TaskSubtaskInput[K],
+  ) => void;
+  onSubtaskRemove: (index: number) => void;
 }) {
   return (
     <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
@@ -126,6 +136,13 @@ export function TaskCreationForm({
             />
           </div>
         </section>
+
+        <TaskSubtaskEditor
+          subtasks={form.subtasks}
+          onAdd={onSubtaskAdd}
+          onChange={onSubtaskChange}
+          onRemove={onSubtaskRemove}
+        />
       </div>
 
       <section className="space-y-4 rounded-[1.75rem] border border-[color:var(--color-border)] bg-[linear-gradient(180deg,rgba(28,63,111,0.08),rgba(255,255,255,0.92))] p-5">
@@ -134,8 +151,8 @@ export function TaskCreationForm({
             Responsables
           </h3>
           <p className="mt-1 text-sm text-[color:var(--color-text-secondary)]">
-            Puedes asignar uno o varios miembros del proyecto desde la misma
-            creacion.
+            Puedes asignar uno o varios miembros del proyecto desde este mismo
+            flujo.
           </p>
         </div>
 

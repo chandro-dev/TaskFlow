@@ -32,10 +32,20 @@ export class TaskCommandService {
       throw new Error("La estimacion debe ser mayor que cero.");
     }
 
+    const subtasks = (input.subtasks ?? []).map((subtask) => ({
+      title: subtask.title.trim(),
+      isCompleted: subtask.isCompleted,
+    }));
+
+    if (subtasks.some((subtask) => !subtask.title)) {
+      throw new Error("Todas las subtareas deben tener un titulo.");
+    }
+
     const task = await this.repository.createTask({
       ...input,
       title,
       description,
+      subtasks,
     });
 
     return task;

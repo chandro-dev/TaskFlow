@@ -5,6 +5,7 @@ import type {
   MemberInvitation,
   ProjectNotification,
   Project,
+  Subtask,
   SystemSettings,
   Task,
   TaskComment,
@@ -22,6 +23,7 @@ import type {
   ProjectRow,
   SettingsRow,
   SupabaseTaskRow,
+  TaskSubtaskRow,
 } from "@/lib/infrastructure/supabase/supabase-row-types";
 
 export function groupByKey<T, K extends keyof T>(rows: T[], key: K): Record<string, T[]> {
@@ -107,9 +109,18 @@ export function normalizeHistoryEntry(row: HistoryRow): TaskHistoryEntry {
   };
 }
 
+export function normalizeSubtask(row: TaskSubtaskRow): Subtask {
+  return {
+    id: row.id,
+    title: row.title,
+    isCompleted: row.is_completed,
+  };
+}
+
 export function normalizeTask(
   row: SupabaseTaskRow,
   labelsByTask: Record<string, Label[]>,
+  subtasksByTask: Record<string, Subtask[]>,
   commentsByTask: Record<string, TaskComment[]>,
   historyByTask: Record<string, TaskHistoryEntry[]>,
 ): Task {
@@ -125,9 +136,10 @@ export function normalizeTask(
     dueDate: row.due_date,
     estimateHours: row.estimate_hours,
     spentHours: row.spent_hours,
+    clonedFromTaskId: row.cloned_from_task_id ?? undefined,
     labels: labelsByTask[row.id] ?? [],
     assigneeIds: row.assignee_ids ?? [],
-    subtasks: [],
+    subtasks: subtasksByTask[row.id] ?? [],
     comments: commentsByTask[row.id] ?? [],
     attachments: [],
     history: historyByTask[row.id] ?? [],

@@ -52,10 +52,10 @@ export function WorkspaceHeader({
             <Link
               key={`${link.label}-${link.href}`}
               href={link.href}
-              className={`rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${
+              className={`taskflow-nav-link rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${
                 isActive(pathname, link.href)
-                  ? "bg-[color:var(--color-surface-muted)] text-[color:var(--color-text-primary)]"
-                  : "text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)]"
+                  ? "taskflow-nav-link-active bg-[color:var(--color-surface-muted)]"
+                  : "text-[color:var(--color-text-secondary)] hover:text-black"
               }`}
             >
               {link.label}

@@ -1,4 +1,5 @@
 import type {
+  CloneTaskInput,
   CreateProjectNotificationInput,
   CreateBoardInput,
   CreateProjectInput,
@@ -12,7 +13,10 @@ import type {
   RegisterUserResult,
   SystemSettings,
   Task,
+  TaskSubtaskInput,
   TaskflowSnapshot,
+  ThemeMode,
+  UpdateTaskInput,
   UpdateInvitationStatusInput,
   UpdateProjectInput,
   UpdateSystemSettingsInput,
@@ -28,6 +32,7 @@ import { createInvitationFactory } from "@/lib/patterns/factory/invitation-facto
 import { createTaskFactory } from "@/lib/patterns/factory/task-factory";
 import { createUserProfileFactory } from "@/lib/patterns/factory/user-profile-factory";
 import { InvitationPrototype } from "@/lib/patterns/prototype/invitation-prototype";
+import { SubtaskPrototype, TaskPrototype } from "@/lib/patterns/prototype/clone";
 
 export class MockTaskflowStore {
   private static instance: MockTaskflowStore | null = null;
@@ -213,9 +218,127 @@ export class MockTaskflowStore {
       builder.withAssignee(assigneeId);
     }
 
+    for (const subtask of input.subtasks ?? []) {
+      builder.withSubtask(subtask.title, subtask.isCompleted);
+    }
+
     const task = builder.build();
     this.snapshot.tasks.unshift(task);
     return structuredClone(task);
+  }
+
+  updateTask(input: UpdateTaskInput): Task {
+    const task = this.snapshot.tasks.find((item) => item.id === input.taskId);
+    const board = this.snapshot.boards.find((item) => item.id === input.boardId);
+
+    if (!task || task.projectId !== input.projectId || task.boardId !== input.boardId) {
+      throw new Error("La tarea no existe dentro del tablero actual.");
+    }
+
+    if (!board || board.projectId !== input.projectId) {
+      throw new Error("El tablero no existe dentro del proyecto.");
+    }
+
+    const destinationColumn = board.columns.find((column) => column.id === input.columnId);
+
+    if (!destinationColumn) {
+      throw new Error("La columna seleccionada no existe dentro del tablero.");
+    }
+
+    const nextSubtasks = input.subtasks.map((subtask) =>
+      this.buildEditableSubtask(task.subtasks, subtask),
+    );
+
+    const updatedTask = new TaskBuilder({
+      ...task,
+      columnId: input.columnId,
+      title: input.title.trim(),
+      description: input.description.trim(),
+      priority: input.priority,
+      type: input.type,
+      dueDate: input.dueDate,
+      estimateHours: input.estimateHours,
+      assigneeIds: [...new Set(input.assigneeIds)],
+      subtasks: nextSubtasks,
+      updatedAt: new Date().toISOString(),
+    })
+      .withHistory({
+        actorId: input.actorId,
+        action: "Tarea actualizada",
+        occurredAt: new Date().toISOString(),
+        toColumnId: input.columnId,
+      })
+      .build();
+
+    this.snapshot.tasks = this.snapshot.tasks.map((item) =>
+      item.id === updatedTask.id ? updatedTask : item,
+    );
+
+    return structuredClone(updatedTask);
+  }
+
+  cloneTask(input: CloneTaskInput): Task {
+    const sourceTask = this.snapshot.tasks.find((item) => item.id === input.sourceTaskId);
+    const board = this.snapshot.boards.find((item) => item.id === input.boardId);
+
+    if (!sourceTask || sourceTask.projectId !== input.projectId) {
+      throw new Error("La tarea origen no existe dentro del proyecto.");
+    }
+
+    if (!board || board.projectId !== input.projectId) {
+      throw new Error("El tablero de destino no existe dentro del proyecto.");
+    }
+
+    const targetColumnId = input.columnId ?? board.columns[0]?.id;
+
+    if (!targetColumnId) {
+      throw new Error("El tablero de destino no tiene columnas disponibles.");
+    }
+
+    // The prototype gives us a clean copy of the source task before applying
+    // the technical overrides of the new assignment.
+    const baseClone = new TaskPrototype(sourceTask).clone({
+      id: crypto.randomUUID(),
+      projectId: input.projectId,
+      boardId: input.boardId,
+      columnId: targetColumnId,
+      title: input.title.trim(),
+      description: input.description.trim(),
+      priority: input.priority,
+      type: input.type,
+      dueDate: input.dueDate,
+      estimateHours: input.estimateHours,
+      assigneeIds: [...new Set(input.assigneeIds)],
+      subtasks: input.subtasks.map((subtask) => {
+        const sourceSubtask = sourceTask.subtasks.find(
+          (candidate) => candidate.id === subtask.sourceSubtaskId,
+        );
+
+        if (!sourceSubtask) {
+          return {
+            id: crypto.randomUUID(),
+            title: subtask.title,
+            isCompleted: subtask.isCompleted,
+          };
+        }
+
+        return new SubtaskPrototype(sourceSubtask).clone({
+          title: subtask.title,
+          isCompleted: subtask.isCompleted,
+        });
+      }),
+      clonedFromTaskId: input.clonedFromTaskId,
+    });
+
+    const clonedTask = new TaskBuilder(baseClone).withHistory({
+      actorId: input.actorId,
+      action: "Tarea clonada",
+      occurredAt: new Date().toISOString(),
+      toColumnId: targetColumnId,
+    }).build();
+
+    this.snapshot.tasks.unshift(clonedTask);
+    return structuredClone(clonedTask);
   }
 
   moveTask(input: MoveTaskInput): Task {
@@ -300,6 +423,22 @@ export class MockTaskflowStore {
     };
 
     return structuredClone(this.snapshot.settings);
+  }
+
+  updateUserThemePreference(userId: string, mode: ThemeMode) {
+    const user = this.snapshot.users.find((item) => item.id === userId);
+
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    user.themePreference = mode;
+
+    if (this.snapshot.currentUser.id === userId) {
+      this.snapshot.currentUser.themePreference = mode;
+    }
+
+    return structuredClone(user);
   }
 
   createInvitation(input: CreateInvitationInput) {
@@ -392,5 +531,26 @@ export class MockTaskflowStore {
     this.snapshot.invitations = this.snapshot.invitations.map((item) =>
       item.id === next.id ? next : item,
     );
+  }
+
+  private buildEditableSubtask(
+    currentSubtasks: Task["subtasks"],
+    subtask: TaskSubtaskInput,
+  ) {
+    const sourceSubtask =
+      currentSubtasks.find((candidate) => candidate.id === subtask.id) ?? null;
+
+    if (!sourceSubtask) {
+      return {
+        id: crypto.randomUUID(),
+        title: subtask.title.trim(),
+        isCompleted: subtask.isCompleted,
+      };
+    }
+
+    return new SubtaskPrototype(sourceSubtask).clone({
+      title: subtask.title.trim(),
+      isCompleted: subtask.isCompleted,
+    });
   }
 }

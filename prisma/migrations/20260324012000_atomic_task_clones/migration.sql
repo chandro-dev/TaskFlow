@@ -1,4 +1,5 @@
-create or replace function public.create_project_task_with_notifications(
+create or replace function public.clone_project_task(
+  source_task_id uuid,
   target_project_id uuid,
   target_board_id uuid,
   target_column_id uuid default null,
@@ -9,7 +10,8 @@ create or replace function public.create_project_task_with_notifications(
   target_due_date date default null,
   target_estimate_hours integer default 0,
   target_assignee_ids uuid[] default '{}',
-  target_subtasks jsonb default '[]'::jsonb
+  target_subtasks jsonb default '[]'::jsonb,
+  target_cloned_from_task_id uuid default null
 )
 returns public.tasks
 language plpgsql
@@ -18,18 +20,28 @@ set search_path = public
 as $$
 declare
   current_user_id uuid := auth.uid();
+  source_task public.tasks;
   resolved_column_id uuid;
+  created_task public.tasks;
   project_name text;
   board_name text;
-  actor_name text;
-  created_task public.tasks;
 begin
   if current_user_id is null then
     raise exception 'Debes iniciar sesion para continuar.';
   end if;
 
   if not public.can_access_project(target_project_id, current_user_id) then
-    raise exception 'No tienes permisos para crear tareas en este proyecto.';
+    raise exception 'No tienes permisos para clonar tareas en este proyecto.';
+  end if;
+
+  select t.*
+  into source_task
+  from public.tasks t
+  where t.id = source_task_id
+    and t.project_id = target_project_id;
+
+  if source_task.id is null then
+    raise exception 'La tarea origen no existe dentro del proyecto.';
   end if;
 
   if not exists (
@@ -38,7 +50,7 @@ begin
     where b.id = target_board_id
       and b.project_id = target_project_id
   ) then
-    raise exception 'El tablero no pertenece al proyecto indicado.';
+    raise exception 'El tablero de destino no pertenece al proyecto.';
   end if;
 
   if target_column_id is not null then
@@ -57,7 +69,7 @@ begin
   end if;
 
   if resolved_column_id is null then
-    raise exception 'El tablero no tiene columnas disponibles.';
+    raise exception 'La columna de destino no pertenece al tablero.';
   end if;
 
   if exists (
@@ -78,7 +90,7 @@ begin
         )
     )
   ) then
-    raise exception 'Todos los responsables deben pertenecer al proyecto.';
+    raise exception 'Todos los responsables de la copia deben pertenecer al proyecto.';
   end if;
 
   insert into public.tasks (
@@ -93,7 +105,8 @@ begin
     estimate_hours,
     spent_hours,
     created_by,
-    assignee_ids
+    assignee_ids,
+    cloned_from_task_id
   )
   values (
     target_project_id,
@@ -101,29 +114,40 @@ begin
     resolved_column_id,
     nullif(trim(coalesce(target_title, '')), ''),
     trim(coalesce(target_description, '')),
-    coalesce(target_priority, 'MEDIA'),
-    coalesce(target_type, 'TASK'),
-    target_due_date,
-    coalesce(target_estimate_hours, 0),
+    coalesce(target_priority, source_task.priority),
+    coalesce(target_type, source_task.type),
+    coalesce(target_due_date, source_task.due_date),
+    coalesce(target_estimate_hours, source_task.estimate_hours),
     0,
     current_user_id,
-    coalesce(target_assignee_ids, '{}')
+    coalesce(target_assignee_ids, source_task.assignee_ids),
+    coalesce(target_cloned_from_task_id, source_task.id)
   )
   returning *
   into created_task;
+
+  insert into public.task_labels (task_id, label_id)
+  select created_task.id, tl.label_id
+  from public.task_labels tl
+  where tl.task_id = source_task.id;
 
   if coalesce(jsonb_array_length(target_subtasks), 0) > 0 then
     insert into public.task_subtasks (task_id, title, is_completed)
     select
       created_task.id,
-      trim(created_subtask.title),
-      created_subtask.is_completed
-    from jsonb_to_recordset(target_subtasks) as created_subtask(
-      id uuid,
+      trim(cloned_subtask.title),
+      cloned_subtask.is_completed
+    from jsonb_to_recordset(target_subtasks) as cloned_subtask(
+      source_subtask_id uuid,
       title text,
       is_completed boolean
     )
-    where nullif(trim(coalesce(created_subtask.title, '')), '') is not null;
+    where nullif(trim(coalesce(cloned_subtask.title, '')), '') is not null;
+  else
+    insert into public.task_subtasks (task_id, title, is_completed)
+    select created_task.id, ts.title, ts.is_completed
+    from public.task_subtasks ts
+    where ts.task_id = source_task.id;
   end if;
 
   insert into public.task_history (
@@ -135,7 +159,7 @@ begin
   values (
     created_task.id,
     current_user_id,
-    'Tarea creada',
+    'Tarea clonada',
     resolved_column_id
   );
 
@@ -144,11 +168,6 @@ begin
   from public.projects p
   join public.boards b on b.id = target_board_id
   where p.id = target_project_id;
-
-  select pr.full_name
-  into actor_name
-  from public.profiles pr
-  where pr.id = current_user_id;
 
   insert into public.project_notifications (
     project_id,
@@ -168,8 +187,8 @@ begin
     created_task.board_id,
     created_task.id,
     'TASK_CREATED',
-    'Nueva tarea: ' || created_task.title,
-    'Se creo la tarea ' || created_task.title || ' dentro del tablero ' || coalesce(board_name, 'Tablero') || '.',
+    'Nueva tarea clonada: ' || created_task.title,
+    'Se clono la tarea ' || created_task.title || ' dentro del tablero ' || coalesce(board_name, 'Tablero') || '.',
     '/projects/' || created_task.project_id || '/boards/' || created_task.board_id || '?query=' || replace(created_task.title, ' ', '%20')
   from (
     select p.owner_id as recipient_id
@@ -188,5 +207,5 @@ begin
 end;
 $$;
 
-revoke all on function public.create_project_task_with_notifications(uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[], jsonb) from public;
-grant execute on function public.create_project_task_with_notifications(uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[], jsonb) to authenticated;
+revoke all on function public.clone_project_task(uuid, uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[], jsonb, uuid) from public;
+grant execute on function public.clone_project_task(uuid, uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[], jsonb, uuid) to authenticated;

@@ -2,35 +2,31 @@
 
 import { startTransition, useEffect, useState } from "react";
 import type { ThemeMode } from "@/lib/domain/models";
-import { getThemeVariables } from "@/lib/patterns/abstract-factory/theme-factory";
 import { MoonIcon, SunIcon } from "@/components/taskflow/icons";
-
-const STORAGE_KEY = "taskflow-theme";
-
-function applyTheme(mode: ThemeMode) {
-  const variables = getThemeVariables(mode);
-  const root = document.documentElement;
-
-  root.dataset.theme = mode;
-  for (const [key, value] of Object.entries(variables)) {
-    root.style.setProperty(key, value);
-  }
-}
+import { ThemeSingleton } from "@/lib/patterns/singleton/theme-singleton";
 
 export function ThemeToggle({ defaultMode }: { defaultMode: ThemeMode }) {
-  const [mode, setMode] = useState<ThemeMode>(defaultMode);
+  const [mode, setMode] = useState<ThemeMode>(() =>
+    typeof window === "undefined"
+      ? defaultMode
+      : ThemeSingleton.getInstance().initialize(defaultMode),
+  );
 
   useEffect(() => {
-    applyTheme(mode);
-  }, [mode]);
+    const themeManager = ThemeSingleton.getInstance();
+    themeManager.initialize(defaultMode);
+
+    // The toggle listens to the singleton so changes coming from Settings are
+    // reflected here without forcing a full page reload.
+    return themeManager.subscribe((nextMode) => setMode(nextMode));
+  }, [defaultMode]);
 
   function toggleTheme() {
     const nextMode = mode === "dark" ? "light" : "dark";
+    const themeManager = ThemeSingleton.getInstance();
 
     startTransition(() => {
-      setMode(nextMode);
-      window.localStorage.setItem(STORAGE_KEY, nextMode);
-      applyTheme(nextMode);
+      themeManager.setMode(nextMode);
     });
   }
 

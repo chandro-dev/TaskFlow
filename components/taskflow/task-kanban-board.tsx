@@ -3,7 +3,9 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TaskCard } from "@/components/taskflow/task-card";
-import type { BoardColumnView } from "@/lib/domain/models";
+import { TaskCloneModal } from "@/components/taskflow/task-clone-modal";
+import { TaskEditorModal } from "@/components/taskflow/task-editor-modal";
+import type { BoardColumnView, UserProfile } from "@/lib/domain/models";
 
 type MoveStatus = {
   taskId: string;
@@ -51,10 +53,12 @@ export function TaskKanbanBoard({
   projectId,
   boardId,
   initialColumns,
+  users,
 }: {
   projectId: string;
   boardId: string;
   initialColumns: BoardColumnView[];
+  users: UserProfile[];
 }) {
   const router = useRouter();
   const [columns, setColumns] = useState(initialColumns);
@@ -208,7 +212,27 @@ export function TaskKanbanBoard({
                           isDragging ? "opacity-55" : ""
                         } ${isSaving ? "animate-pulse" : ""}`}
                       >
-                        <TaskCard task={task} />
+                        <TaskCard
+                          task={task}
+                          actions={
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <TaskEditorModal
+                                task={task}
+                                projectId={projectId}
+                                boardId={boardId}
+                                columns={columns}
+                                users={users}
+                              />
+                              <TaskCloneModal
+                                task={task}
+                                projectId={projectId}
+                                boardId={boardId}
+                                columns={columns}
+                                users={users}
+                              />
+                            </div>
+                          }
+                        />
                       </div>
                     );
                   })

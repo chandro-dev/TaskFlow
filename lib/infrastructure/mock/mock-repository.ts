@@ -40,6 +40,14 @@ export class MockTaskflowRepository implements TaskflowRepository {
     return this.store.createTask(input);
   }
 
+  async updateTask(input: Parameters<TaskflowRepository["updateTask"]>[0]) {
+    return this.store.updateTask(input);
+  }
+
+  async cloneTask(input: Parameters<TaskflowRepository["cloneTask"]>[0]) {
+    return this.store.cloneTask(input);
+  }
+
   async moveTask(input: Parameters<TaskflowRepository["moveTask"]>[0]) {
     return this.store.moveTask(input);
   }
@@ -60,6 +68,13 @@ export class MockTaskflowRepository implements TaskflowRepository {
 
   async updateSettings(input: Parameters<TaskflowRepository["updateSettings"]>[0]) {
     return this.store.updateSettings(input);
+  }
+
+  async updateUserThemePreference(
+    userId: string,
+    mode: Parameters<TaskflowRepository["updateUserThemePreference"]>[1],
+  ) {
+    return this.store.updateUserThemePreference(userId, mode);
   }
 
   async createInvitation(input: Parameters<TaskflowRepository["createInvitation"]>[0]) {

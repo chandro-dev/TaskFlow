@@ -1,10 +1,13 @@
 import type {
+  CloneTaskRequestInput,
   CreateBoardInput,
   CreateInvitationInput,
   CreateProjectInput,
   CreateTaskInput,
   MoveTaskInput,
   TaskFilters,
+  ThemeMode,
+  UpdateTaskInput,
   UpdateProjectInput,
   UpdateSystemSettingsInput,
   UserProfile,
@@ -59,8 +62,16 @@ export class TaskflowService {
     return this.services.taskCommands.createTask(input);
   }
 
+  async updateTask(input: UpdateTaskInput) {
+    return this.services.taskUpdates.updateTask(input);
+  }
+
   async moveTask(input: MoveTaskInput) {
     return this.services.taskMoves.moveTask(input);
+  }
+
+  async cloneTask(input: CloneTaskRequestInput) {
+    return this.services.taskClones.cloneTask(input);
   }
 
   async getProjectsPageData(
@@ -84,6 +95,10 @@ export class TaskflowService {
 
   async updateSettings(input: UpdateSystemSettingsInput) {
     return this.services.settingsCommands.updateSettings(input);
+  }
+
+  async updateThemePreference(userId: string, mode: ThemeMode) {
+    return this.services.themePreferenceCommands.updateThemePreference(userId, mode);
   }
 
   async markNotificationRead(notificationId: string, recipientId: string) {

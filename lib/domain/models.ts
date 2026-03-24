@@ -46,6 +46,12 @@ export interface Subtask {
   isCompleted: boolean;
 }
 
+export interface TaskSubtaskInput {
+  id?: string;
+  title: string;
+  isCompleted: boolean;
+}
+
 export interface TaskComment {
   id: string;
   authorId: string;
@@ -82,6 +88,7 @@ export interface Task {
   dueDate: string;
   estimateHours: number;
   spentHours: number;
+  clonedFromTaskId?: string;
   labels: Label[];
   assigneeIds: string[];
   subtasks: Subtask[];
@@ -181,6 +188,7 @@ export interface CreateTaskInput {
   dueDate: string;
   estimateHours: number;
   assigneeIds?: string[];
+  subtasks?: TaskSubtaskInput[];
 }
 
 export interface MoveTaskInput {
@@ -189,6 +197,62 @@ export interface MoveTaskInput {
   boardId: string;
   actorId: string;
   toColumnId: string;
+}
+
+export interface CloneTaskSubtaskInput {
+  sourceSubtaskId?: string;
+  title: string;
+  isCompleted: boolean;
+}
+
+export interface CloneTaskInput {
+  sourceTaskId: string;
+  projectId: string;
+  boardId: string;
+  actorId: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  type: TaskType;
+  dueDate: string;
+  estimateHours: number;
+  assigneeIds: string[];
+  subtasks: CloneTaskSubtaskInput[];
+  columnId?: string;
+  clonedFromTaskId: string;
+}
+
+export interface UpdateTaskInput {
+  taskId: string;
+  projectId: string;
+  boardId: string;
+  actorId: string;
+  columnId: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  type: TaskType;
+  dueDate: string;
+  estimateHours: number;
+  assigneeIds: string[];
+  subtasks: TaskSubtaskInput[];
+}
+
+export interface CloneTaskRequestInput {
+  sourceTaskId: string;
+  projectId: string;
+  boardId: string;
+  actorId: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  type: TaskType;
+  dueDate: string;
+  estimateHours: number;
+  assigneeIds: string[];
+  columnId?: string;
+  subtaskIds?: string[];
+  resetCompletedSubtasks?: boolean;
 }
 
 export interface UpdateSystemSettingsInput {

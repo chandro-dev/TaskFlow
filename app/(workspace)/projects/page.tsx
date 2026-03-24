@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/auth/current-user";
 import { BoardCreator } from "@/components/taskflow/board-creator";
-import { InvitationManager } from "@/components/taskflow/invitation-manager";
+import { InvitationManagerModal } from "@/components/taskflow/invitation-manager-modal";
 import { ProjectCreator } from "@/components/taskflow/project-creator";
 import { ProjectCard } from "@/components/taskflow/project-card";
 import { ArrowRightIcon, SearchIcon } from "@/components/taskflow/icons";
@@ -119,7 +119,7 @@ export default async function ProjectsPage({
       </section>
 
       <aside className="space-y-6">
-        <InvitationManager
+        <InvitationManagerModal
           projects={data.projects}
           users={data.users}
           defaultProjectId={data.selectedProject?.id}

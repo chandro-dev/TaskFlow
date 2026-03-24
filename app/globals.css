@@ -111,6 +111,27 @@ select {
   color: var(--color-text-secondary);
 }
 
+html[data-theme="light"] .taskflow-nav-link {
+  color: rgba(255, 255, 255, 0.96);
+  text-shadow: 0 1px 10px rgba(15, 23, 42, 0.18);
+}
+
+html[data-theme="light"] .taskflow-nav-link:hover,
+html[data-theme="light"] .taskflow-nav-link:focus-visible {
+  color: #000;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .taskflow-nav-link-active {
+  color: #000;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .taskflow-brand-title {
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 10px rgba(15, 23, 42, 0.2);
+}
+
 @media (max-width: 768px) {
   body {
     background:

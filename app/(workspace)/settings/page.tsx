@@ -53,7 +53,10 @@ export default async function SettingsPage() {
         <section className="taskflow-panel p-6">
           <h2 className="text-2xl font-semibold">Parámetros globales</h2>
           <div className="mt-6 space-y-5">
-            <SettingsForm settings={data.settings} />
+            <SettingsForm
+              settings={data.settings}
+              currentUser={data.currentUser}
+            />
             <div>
               <p className="text-sm text-[color:var(--color-text-secondary)]">
                 Política de contraseñas

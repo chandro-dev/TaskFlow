@@ -2,6 +2,7 @@ import type {
   MemberInvitation,
   ProjectNotification,
   Project,
+  Subtask,
   SystemSettings,
   Task,
   UserProfile,
@@ -20,6 +21,7 @@ export interface SupabaseTaskRow {
   estimate_hours: number;
   spent_hours: number;
   assignee_ids: string[];
+  cloned_from_task_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +78,13 @@ export interface LabelRow {
 export interface TaskLabelRow {
   task_id: string;
   label_id: string;
+}
+
+export interface TaskSubtaskRow {
+  id: string;
+  task_id: string;
+  title: string;
+  is_completed: Subtask["isCompleted"];
 }
 
 export interface CommentRow {

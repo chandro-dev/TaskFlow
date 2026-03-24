@@ -80,6 +80,16 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     return new SupabaseTaskCommand(client).createTask(input);
   }
 
+  async updateTask(input: Parameters<TaskflowRepository["updateTask"]>[0]) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseTaskCommand(client).updateTask(input);
+  }
+
+  async cloneTask(input: Parameters<TaskflowRepository["cloneTask"]>[0]) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseTaskCommand(client).cloneTask(input);
+  }
+
   async moveTask(input: Parameters<TaskflowRepository["moveTask"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseTaskCommand(client).moveTask(input);
@@ -110,6 +120,25 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
   async updateSettings(input: Parameters<TaskflowRepository["updateSettings"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseSettingsCommand(client).updateSettings(input);
+  }
+
+  async updateUserThemePreference(
+    userId: string,
+    mode: Parameters<TaskflowRepository["updateUserThemePreference"]>[1],
+  ) {
+    const client = await getSupabaseClientOrThrow();
+    const { data, error } = await client
+      .from("profiles")
+      .update({ theme_preference: mode })
+      .eq("id", userId)
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      throw new Error("No fue posible actualizar la preferencia de tema.");
+    }
+
+    return normalizeUser(data as ProfileRow);
   }
 
   async createInvitation(input: Parameters<TaskflowRepository["createInvitation"]>[0]) {

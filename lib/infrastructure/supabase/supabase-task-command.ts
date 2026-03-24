@@ -1,8 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  CloneTaskInput,
   CreateTaskInput,
+  MoveTaskInput,
   Task,
   TaskHistoryEntry,
+  TaskSubtaskInput,
+  UpdateTaskInput,
 } from "@/lib/domain/models";
 import { TaskBuilder } from "@/lib/patterns/builder/task-builder";
 import { createTaskFactory } from "@/lib/patterns/factory/task-factory";
@@ -14,9 +18,8 @@ import type {
   BoardColumnRow,
   HistoryRow,
   SupabaseTaskRow,
+  TaskSubtaskRow,
 } from "@/lib/infrastructure/supabase/supabase-row-types";
-import type { MoveTaskInput } from "@/lib/domain/models";
-
 export class SupabaseTaskCommand {
   constructor(private readonly client: SupabaseClient) {}
 
@@ -42,6 +45,7 @@ export class SupabaseTaskCommand {
         target_due_date: draftTask.dueDate,
         target_estimate_hours: draftTask.estimateHours,
         target_assignee_ids: draftTask.assigneeIds,
+        target_subtasks: this.serializeSubtasks(input.subtasks ?? []),
       },
     );
 
@@ -53,9 +57,40 @@ export class SupabaseTaskCommand {
       taskRow as SupabaseTaskRow,
       input.actorId,
     );
-    const createdTask = normalizeTask(taskRow as SupabaseTaskRow, {}, {}, {});
+    const subtasksByTask = await this.loadTaskSubtasks((taskRow as SupabaseTaskRow).id);
+    const createdTask = normalizeTask(taskRow as SupabaseTaskRow, {}, subtasksByTask, {}, {});
 
     return new TaskBuilder(createdTask).withHistory(historyEntry).build();
+  }
+
+  async updateTask(input: UpdateTaskInput): Promise<Task> {
+    const { data, error } = await this.client.rpc("update_project_task_details", {
+      target_task_id: input.taskId,
+      target_project_id: input.projectId,
+      target_board_id: input.boardId,
+      target_column_id: input.columnId,
+      target_title: input.title,
+      target_description: input.description,
+      target_priority: input.priority,
+      target_type: input.type,
+      target_due_date: input.dueDate,
+      target_estimate_hours: input.estimateHours,
+      target_assignee_ids: input.assigneeIds,
+      target_subtasks: this.serializeSubtasks(input.subtasks),
+    });
+
+    if (error || !data) {
+      throw new Error(error?.message ?? "No fue posible actualizar la tarea.");
+    }
+
+    const subtasksByTask = await this.loadTaskSubtasks((data as SupabaseTaskRow).id);
+    const updatedTask = normalizeTask(data as SupabaseTaskRow, {}, subtasksByTask, {}, {});
+    const historyEntry = await this.loadUpdateHistory(
+      data as SupabaseTaskRow,
+      input.actorId,
+    );
+
+    return new TaskBuilder(updatedTask).withHistory(historyEntry).build();
   }
 
   async moveTask(input: MoveTaskInput): Promise<Task> {
@@ -70,7 +105,7 @@ export class SupabaseTaskCommand {
       throw new Error(error?.message ?? "No fue posible mover la tarea.");
     }
 
-    const movedTask = normalizeTask(data as SupabaseTaskRow, {}, {}, {});
+    const movedTask = normalizeTask(data as SupabaseTaskRow, {}, {}, {}, {});
     const historyEntry = await this.createMoveHistory(
       data as SupabaseTaskRow,
       input.actorId,
@@ -78,6 +113,37 @@ export class SupabaseTaskCommand {
     );
 
     return new TaskBuilder(movedTask).withHistory(historyEntry).build();
+  }
+
+  async cloneTask(input: CloneTaskInput): Promise<Task> {
+    const { data, error } = await this.client.rpc("clone_project_task", {
+      source_task_id: input.sourceTaskId,
+      target_project_id: input.projectId,
+      target_board_id: input.boardId,
+      target_column_id: input.columnId ?? null,
+      target_title: input.title,
+      target_description: input.description,
+      target_priority: input.priority,
+      target_type: input.type,
+      target_due_date: input.dueDate,
+      target_estimate_hours: input.estimateHours,
+      target_assignee_ids: input.assigneeIds,
+      target_subtasks: this.serializeSubtasks(input.subtasks),
+      target_cloned_from_task_id: input.clonedFromTaskId,
+    });
+
+    if (error || !data) {
+      throw new Error(error?.message ?? "No fue posible clonar la tarea.");
+    }
+
+    const subtasksByTask = await this.loadTaskSubtasks((data as SupabaseTaskRow).id);
+    const clonedTask = normalizeTask(data as SupabaseTaskRow, {}, subtasksByTask, {}, {});
+    const historyEntry = await this.loadCloneHistory(
+      data as SupabaseTaskRow,
+      input.actorId,
+    );
+
+    return new TaskBuilder(clonedTask).withHistory(historyEntry).build();
   }
 
   private async loadBoardColumns(boardId: string) {
@@ -92,6 +158,25 @@ export class SupabaseTaskCommand {
     }
 
     return (data ?? []) as BoardColumnRow[];
+  }
+
+  private async loadTaskSubtasks(taskId: string) {
+    const { data, error } = await this.client
+      .from("task_subtasks")
+      .select("*")
+      .eq("task_id", taskId);
+
+    if (error) {
+      return {};
+    }
+
+    return {
+      [taskId]: ((data ?? []) as TaskSubtaskRow[]).map((row) => ({
+        id: row.id,
+        title: row.title,
+        isCompleted: row.is_completed,
+      })),
+    };
   }
 
   private buildDraftTask(input: CreateTaskInput, columnId: string) {
@@ -115,6 +200,14 @@ export class SupabaseTaskCommand {
     }
 
     return builder.build();
+  }
+
+  private serializeSubtasks(subtasks: TaskSubtaskInput[]) {
+    return subtasks.map((subtask) => ({
+      id: subtask.id ?? null,
+      title: subtask.title,
+      is_completed: subtask.isCompleted,
+    }));
   }
 
   private async loadCreationHistory(
@@ -166,6 +259,60 @@ export class SupabaseTaskCommand {
         action: "Cambio de estado",
         occurredAt: new Date().toISOString(),
         toColumnId,
+      };
+    }
+
+    return normalizeHistoryEntry(data as HistoryRow);
+  }
+
+  private async loadCloneHistory(
+    task: SupabaseTaskRow,
+    actorId: string,
+  ): Promise<TaskHistoryEntry> {
+    const { data, error } = await this.client
+      .from("task_history")
+      .select("*")
+      .eq("task_id", task.id)
+      .eq("actor_id", actorId)
+      .eq("action", "Tarea clonada")
+      .order("occurred_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return {
+        id: crypto.randomUUID(),
+        actorId,
+        action: "Tarea clonada",
+        occurredAt: new Date().toISOString(),
+        toColumnId: task.column_id,
+      };
+    }
+
+    return normalizeHistoryEntry(data as HistoryRow);
+  }
+
+  private async loadUpdateHistory(
+    task: SupabaseTaskRow,
+    actorId: string,
+  ): Promise<TaskHistoryEntry> {
+    const { data, error } = await this.client
+      .from("task_history")
+      .select("*")
+      .eq("task_id", task.id)
+      .eq("actor_id", actorId)
+      .eq("action", "Tarea actualizada")
+      .order("occurred_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return {
+        id: crypto.randomUUID(),
+        actorId,
+        action: "Tarea actualizada",
+        occurredAt: new Date().toISOString(),
+        toColumnId: task.column_id,
       };
     }
 

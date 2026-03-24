@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Label,
+  Subtask,
   TaskComment,
   TaskHistoryEntry,
   TaskflowSnapshot,
@@ -16,6 +17,7 @@ import {
   normalizeNotification,
   normalizeProject,
   normalizeSettings,
+  normalizeSubtask,
   normalizeTask,
   normalizeUser,
 } from "@/lib/infrastructure/supabase/supabase-normalizers";
@@ -33,6 +35,7 @@ import type {
   SettingsRow,
   SupabaseTaskRow,
   TaskLabelRow,
+  TaskSubtaskRow,
 } from "@/lib/infrastructure/supabase/supabase-row-types";
 
 export class SupabaseSnapshotQuery {
@@ -48,6 +51,7 @@ export class SupabaseSnapshotQuery {
       tasksResult,
       labelsResult,
       taskLabelsResult,
+      taskSubtasksResult,
       commentsResult,
       historyResult,
       invitationsResult,
@@ -62,6 +66,7 @@ export class SupabaseSnapshotQuery {
       this.client.from("tasks").select("*"),
       this.client.from("labels").select("*"),
       this.client.from("task_labels").select("*"),
+      this.client.from("task_subtasks").select("*"),
       this.client.from("task_comments").select("*"),
       this.client.from("task_history").select("*"),
       this.client.from("member_invitations").select("*"),
@@ -78,6 +83,7 @@ export class SupabaseSnapshotQuery {
       tasksResult.error ||
       labelsResult.error ||
       taskLabelsResult.error ||
+      taskSubtasksResult.error ||
       commentsResult.error ||
       historyResult.error ||
       invitationsResult.error ||
@@ -92,6 +98,9 @@ export class SupabaseSnapshotQuery {
     const labelsByTask = this.hydrateLabelsByTask(
       (labelsResult.data ?? []) as LabelRow[],
       (taskLabelsResult.data ?? []) as TaskLabelRow[],
+    );
+    const subtasksByTask = this.groupTaskSubtasks(
+      (taskSubtasksResult.data ?? []) as TaskSubtaskRow[],
     );
     const commentsByTask = this.groupTaskComments((commentsResult.data ?? []) as CommentRow[]);
     const historyByTask = this.groupTaskHistory((historyResult.data ?? []) as HistoryRow[]);
@@ -125,7 +134,7 @@ export class SupabaseSnapshotQuery {
       ),
       boards,
       tasks: ((tasksResult.data ?? []) as SupabaseTaskRow[]).map((row) =>
-        normalizeTask(row, labelsByTask, commentsByTask, historyByTask),
+        normalizeTask(row, labelsByTask, subtasksByTask, commentsByTask, historyByTask),
       ),
       invitations: ((invitationsResult.data ?? []) as InvitationRow[]).map(
         normalizeInvitation,
@@ -167,6 +176,15 @@ export class SupabaseSnapshotQuery {
       Object.entries(groupByKey(rows, "task_id")).map(([taskId, taskRows]) => [
         taskId,
         taskRows.map((row) => normalizeComment(row)),
+      ]),
+    );
+  }
+
+  private groupTaskSubtasks(rows: TaskSubtaskRow[]): Record<string, Subtask[]> {
+    return Object.fromEntries(
+      Object.entries(groupByKey(rows, "task_id")).map(([taskId, taskRows]) => [
+        taskId,
+        taskRows.map((row) => normalizeSubtask(row)),
       ]),
     );
   }

@@ -6,6 +6,7 @@ import type {
   CreateBoardInput,
   CreateInvitationInput,
   CreateTaskInput,
+  CloneTaskInput,
   MemberInvitation,
   MoveTaskInput,
   ProjectNotification,
@@ -14,6 +15,8 @@ import type {
   RegisterUserResult,
   SystemSettings,
   TaskflowSnapshot,
+  ThemeMode,
+  UpdateTaskInput,
   UpdateProjectInput,
   UpdateInvitationStatusInput,
   UpdateSystemSettingsInput,
@@ -31,6 +34,8 @@ export interface TaskflowRepository {
   deleteProject(projectId: string): Promise<void>;
   createBoard(input: CreateBoardInput): Promise<Board>;
   createTask(input: CreateTaskInput): Promise<Task>;
+  updateTask(input: UpdateTaskInput): Promise<Task>;
+  cloneTask(input: CloneTaskInput): Promise<Task>;
   moveTask(input: MoveTaskInput): Promise<Task>;
   createNotifications(
     input: CreateProjectNotificationInput[],
@@ -41,6 +46,7 @@ export interface TaskflowRepository {
   ): Promise<ProjectNotification>;
   markAllNotificationsRead(recipientId: string): Promise<void>;
   updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings>;
+  updateUserThemePreference(userId: string, mode: ThemeMode): Promise<UserProfile>;
   createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>;
   updateInvitationStatus(
     input: UpdateInvitationStatusInput,

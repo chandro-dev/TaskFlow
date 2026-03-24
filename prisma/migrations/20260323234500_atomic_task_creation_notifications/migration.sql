@@ -8,7 +8,8 @@ create or replace function public.create_project_task_with_notifications(
   target_type public.task_type default 'TASK',
   target_due_date date default null,
   target_estimate_hours integer default 0,
-  target_assignee_ids uuid[] default '{}'
+  target_assignee_ids uuid[] default '{}',
+  target_subtasks jsonb default '[]'::jsonb
 )
 returns public.tasks
 language plpgsql
@@ -111,6 +112,20 @@ begin
   returning *
   into created_task;
 
+  if coalesce(jsonb_array_length(target_subtasks), 0) > 0 then
+    insert into public.task_subtasks (task_id, title, is_completed)
+    select
+      created_task.id,
+      trim(created_subtask.title),
+      created_subtask.is_completed
+    from jsonb_to_recordset(target_subtasks) as created_subtask(
+      id uuid,
+      title text,
+      is_completed boolean
+    )
+    where nullif(trim(coalesce(created_subtask.title, '')), '') is not null;
+  end if;
+
   insert into public.task_history (
     task_id,
     actor_id,
@@ -173,5 +188,5 @@ begin
 end;
 $$;
 
-revoke all on function public.create_project_task_with_notifications(uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[]) from public;
-grant execute on function public.create_project_task_with_notifications(uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[]) to authenticated;
+revoke all on function public.create_project_task_with_notifications(uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[], jsonb) from public;
+grant execute on function public.create_project_task_with_notifications(uuid, uuid, uuid, text, text, public.task_priority, public.task_type, date, integer, uuid[], jsonb) to authenticated;

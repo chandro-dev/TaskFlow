@@ -147,6 +147,8 @@ export function hydrateInvitation(
   return {
     ...invitation,
     inviter: snapshot.users.find((user) => user.id === invitation.invitedBy) ?? null,
+    invitedUser:
+      snapshot.users.find((user) => user.id === invitation.invitedUserId) ?? null,
     project:
       snapshot.projects.find((project) => project.id === invitation.projectId) ?? null,
   };

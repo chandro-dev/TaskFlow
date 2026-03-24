@@ -274,7 +274,7 @@ export class MockTaskflowStore {
 
   createInvitation(input: CreateInvitationInput) {
     const invitation = new MemberInvitationBuilder(
-      createInvitationFactory("EMAIL").create(input),
+      createInvitationFactory("IN_APP").create(input),
     )
       .withMessage(input.message)
       .withExpiry(7)
@@ -317,7 +317,7 @@ export class MockTaskflowStore {
         (item) => item.id === updated.projectId,
       );
       const user = this.snapshot.users.find(
-        (item) => item.email.toLowerCase() === updated.email.toLowerCase(),
+        (item) => item.id === updated.invitedUserId,
       );
 
       if (project && user && !project.memberIds.includes(user.id)) {

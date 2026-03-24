@@ -52,22 +52,7 @@ drop policy if exists "project_notifications_member_create" on public.project_no
 create policy "project_notifications_member_create"
 on public.project_notifications for insert
 to authenticated
-with check (
-  exists (
-    select 1
-    from public.projects p
-    where p.id = project_notifications.project_id
-      and (
-        p.owner_id = auth.uid()
-        or exists (
-          select 1
-          from public.project_members pm
-          where pm.project_id = p.id
-            and pm.user_id = auth.uid()
-        )
-      )
-  )
-);
+with check (public.can_access_project(project_notifications.project_id, auth.uid()));
 
 drop policy if exists "project_notifications_recipient_update" on public.project_notifications;
 create policy "project_notifications_recipient_update"

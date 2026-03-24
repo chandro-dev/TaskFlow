@@ -2,7 +2,7 @@ export type UserRole = "ADMIN" | "PROJECT_MANAGER" | "DEVELOPER";
 
 export type ThemeMode = "light" | "dark";
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
-export type InvitationChannel = "EMAIL";
+export type InvitationChannel = "IN_APP";
 export type NotificationKind =
   | "PROJECT_CREATED"
   | "PROJECT_UPDATED"
@@ -183,6 +183,14 @@ export interface CreateTaskInput {
   assigneeIds?: string[];
 }
 
+export interface MoveTaskInput {
+  taskId: string;
+  projectId: string;
+  boardId: string;
+  actorId: string;
+  toColumnId: string;
+}
+
 export interface UpdateSystemSettingsInput {
   platformName: string;
   maxAttachmentMb: number;
@@ -193,7 +201,7 @@ export interface UpdateSystemSettingsInput {
 export interface MemberInvitation {
   id: string;
   projectId: string;
-  email: string;
+  invitedUserId: string;
   role: UserRole;
   status: InvitationStatus;
   channel: InvitationChannel;
@@ -338,12 +346,13 @@ export interface SettingsView {
 
 export interface ProjectInvitationView extends MemberInvitation {
   inviter: UserProfile | null;
+  invitedUser: UserProfile | null;
   project: Project | null;
 }
 
 export interface CreateInvitationInput {
   projectId: string;
-  email: string;
+  invitedUserId: string;
   role: UserRole;
   invitedBy: string;
   message?: string;
@@ -351,7 +360,7 @@ export interface CreateInvitationInput {
 
 export interface InvitationDraft {
   projectId: string;
-  email: string;
+  invitedUserId: string;
   role: UserRole;
   invitedBy: string;
   message?: string;

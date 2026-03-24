@@ -16,10 +16,16 @@ type StatusMessage =
   | null;
 
 type InvitationPersonOption = {
-  email: string;
+  userId: string;
   label: string;
   total: number;
   pending: number;
+};
+
+type InternalCandidateView = {
+  user: UserProfile;
+  selectable: boolean;
+  reason: string;
 };
 
 async function requestJson(url: string, options: RequestInit) {
@@ -39,15 +45,40 @@ function toggleSelection(current: string[], userId: string) {
     : [...current, userId];
 }
 
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
+function buildCandidateReason(
+  user: UserProfile,
+  selectedProject: ProjectCardView,
+  invitedUserIds: Set<string>,
+) {
+  if (selectedProject.members.some((member) => member.id === user.id)) {
+    return {
+      selectable: false,
+      reason: "Ya pertenece al proyecto",
+    };
+  }
+
+  if (invitedUserIds.has(user.id)) {
+    return {
+      selectable: false,
+      reason: "Invitacion pendiente",
+    };
+  }
+
+  if (!user.isActive) {
+    return {
+      selectable: false,
+      reason: "Usuario inactivo",
+    };
+  }
+
+  return {
+    selectable: true,
+    reason: "Disponible para invitar",
+  };
 }
 
-function resolveInviteeName(email: string, users: UserProfile[]) {
-  return (
-    users.find((user) => normalizeEmail(user.email) === normalizeEmail(email))
-      ?.name ?? email
-  );
+function resolveInvitationPerson(invitation: ProjectInvitationView) {
+  return invitation.invitedUser ?? null;
 }
 
 export function InvitationManager({
@@ -66,11 +97,10 @@ export function InvitationManager({
     defaultProjectId ?? projects[0]?.id ?? "",
   );
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("DEVELOPER");
   const [message, setMessage] = useState("");
   const [selectedViewProjectId, setSelectedViewProjectId] = useState("ALL");
-  const [selectedInviteeEmail, setSelectedInviteeEmail] = useState("ALL");
+  const [selectedInviteeUserId, setSelectedInviteeUserId] = useState("ALL");
   const [statusMessage, setStatusMessage] = useState<StatusMessage>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -94,33 +124,34 @@ export function InvitationManager({
           ),
     [invitations, selectedViewProjectId],
   );
-  const invitedEmails = useMemo(
+  const invitedUserIds = useMemo(
     () =>
       new Set(
         projectInvitations
           .filter((invitation) => invitation.status === "PENDING")
-          .map((invitation) => normalizeEmail(invitation.email)),
+          .map((invitation) => invitation.invitedUserId),
       ),
     [projectInvitations],
   );
-  const internalCandidates = useMemo(() => {
+  const internalCandidates = useMemo<InternalCandidateView[]>(() => {
     if (!selectedProject) {
       return [];
     }
 
-    return users.filter(
-      (user) =>
-        user.isActive &&
-        !selectedProject.members.some((member) => member.id === user.id) &&
-        !invitedEmails.has(normalizeEmail(user.email)),
-    );
-  }, [invitedEmails, selectedProject, users]);
+    return [...users]
+      .sort((left, right) => left.name.localeCompare(right.name, "es"))
+      .map((user) => ({
+        user,
+        ...buildCandidateReason(user, selectedProject, invitedUserIds),
+      }));
+  }, [invitedUserIds, selectedProject, users]);
   const invitationPeople = useMemo<InvitationPersonOption[]>(() => {
     const peopleMap = new Map<string, InvitationPersonOption>();
 
     for (const invitation of visibleProjectInvitations) {
-      const normalizedEmail = normalizeEmail(invitation.email);
-      const current = peopleMap.get(normalizedEmail);
+      const invitedUser = resolveInvitationPerson(invitation);
+      const optionKey = invitation.invitedUserId;
+      const current = peopleMap.get(optionKey);
 
       if (current) {
         current.total += 1;
@@ -130,9 +161,9 @@ export function InvitationManager({
         continue;
       }
 
-      peopleMap.set(normalizedEmail, {
-        email: invitation.email,
-        label: resolveInviteeName(invitation.email, users),
+      peopleMap.set(optionKey, {
+        userId: optionKey,
+        label: invitedUser?.name ?? `Usuario ${optionKey.slice(0, 8)}`,
         total: 1,
         pending: invitation.status === "PENDING" ? 1 : 0,
       });
@@ -141,17 +172,15 @@ export function InvitationManager({
     return Array.from(peopleMap.values()).sort((left, right) =>
       left.label.localeCompare(right.label, "es"),
     );
-  }, [users, visibleProjectInvitations]);
+  }, [visibleProjectInvitations]);
   const visibleInvitations = useMemo(
     () =>
-      selectedInviteeEmail === "ALL"
+      selectedInviteeUserId === "ALL"
         ? visibleProjectInvitations
         : visibleProjectInvitations.filter(
-            (invitation) =>
-              normalizeEmail(invitation.email) ===
-              normalizeEmail(selectedInviteeEmail),
+            (invitation) => invitation.invitedUserId === selectedInviteeUserId,
           ),
-    [selectedInviteeEmail, visibleProjectInvitations],
+    [selectedInviteeUserId, visibleProjectInvitations],
   );
 
   if (!projects.length || !selectedProject) {
@@ -165,15 +194,17 @@ export function InvitationManager({
     setBusyId("create");
     setStatusMessage(null);
 
-    const selectedEmails = internalCandidates
-      .filter((user) => selectedUserIds.includes(user.id))
-      .map((user) => user.email);
-    const externalEmail = email.trim();
+    const selectedIds = internalCandidates
+      .filter(
+        (candidate) =>
+          candidate.selectable && selectedUserIds.includes(candidate.user.id),
+      )
+      .map((candidate) => candidate.user.id);
 
-    if (!selectedEmails.length && !externalEmail) {
+    if (!selectedIds.length) {
       setStatusMessage({
         type: "error",
-        text: "Selecciona al menos un usuario interno o escribe un correo.",
+        text: "Selecciona al menos una persona disponible para invitar.",
       });
       setBusyId(null);
       return;
@@ -186,22 +217,20 @@ export function InvitationManager({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: externalEmail || undefined,
-            emails: selectedEmails,
+            userIds: selectedIds,
             role,
             message,
           }),
         },
       );
 
-      setEmail("");
       setSelectedUserIds([]);
       setRole("DEVELOPER");
       setMessage("");
-      setSelectedInviteeEmail("ALL");
+      setSelectedInviteeUserId("ALL");
       setStatusMessage({
         type: "success",
-        text: `Se registraron ${payload.invitations?.length ?? 0} invitaciones en ${activeProject.name}.`,
+        text: `Se registraron ${payload.invitations?.length ?? 0} invitaciones internas en ${activeProject.name}.`,
       });
       startTransition(() => router.refresh());
     } catch (error) {
@@ -229,7 +258,7 @@ export function InvitationManager({
         type: "success",
         text:
           action === "resend"
-            ? "Invitacion reenviada."
+            ? "Recordatorio reenviado dentro de la aplicacion."
             : "Invitacion revocada.",
       });
       startTransition(() => router.refresh());
@@ -249,8 +278,9 @@ export function InvitationManager({
         <div>
           <h2 className="text-xl font-semibold">Invitaciones de miembros</h2>
           <p className="mt-2 text-sm leading-7 text-[color:var(--color-text-secondary)]">
-            Usa `member_invitations` para registrar correos externos o personas
-            ya existentes en la aplicacion.
+            Usa `member_invitations` enlazada a usuarios del sistema para
+            gestionar invitaciones internas y notificaciones dentro de la
+            aplicacion.
           </p>
         </div>
         <div className="taskflow-chip">{selectedProject.name}</div>
@@ -278,52 +308,60 @@ export function InvitationManager({
             Personas dentro de la aplicacion
           </p>
           <p className="mt-1 text-xs text-[color:var(--color-text-secondary)]">
-            Marca developers o usuarios internos para invitarlos al proyecto
-            seleccionado.
+            Se consideran todos los usuarios del sistema. Los no disponibles se
+            muestran con su motivo.
           </p>
 
           <div className="mt-4 space-y-3">
             {internalCandidates.length ? (
-              internalCandidates.map((user) => (
+              internalCandidates.map((candidate) => (
                 <label
-                  key={user.id}
-                  className="flex items-center gap-3 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3"
+                  key={candidate.user.id}
+                  className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
+                    candidate.selectable
+                      ? "border-[color:var(--color-border)] bg-[color:var(--color-surface)]"
+                      : "border-[color:rgba(184,194,212,0.5)] bg-[color:rgba(184,194,212,0.12)] opacity-75"
+                  }`}
                 >
                   <input
                     type="checkbox"
-                    checked={selectedUserIds.includes(user.id)}
+                    checked={selectedUserIds.includes(candidate.user.id)}
+                    disabled={!candidate.selectable}
                     onChange={() =>
                       setSelectedUserIds((current) =>
-                        toggleSelection(current, user.id),
+                        toggleSelection(current, candidate.user.id),
                       )
                     }
                   />
-                  <div>
-                    <p className="text-sm font-medium text-[color:var(--color-text-primary)]">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-[color:var(--color-text-secondary)]">
-                      {user.email} · {roleLabel(user.role)}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-[color:var(--color-text-primary)]">
+                        {candidate.user.name}
+                      </p>
+                      <span
+                        className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                          candidate.selectable
+                            ? "bg-[color:rgba(46,162,111,0.12)] text-[color:var(--color-success)]"
+                            : "bg-[color:var(--color-surface)] text-[color:var(--color-text-secondary)]"
+                        }`}
+                      >
+                        {candidate.reason}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-[color:var(--color-text-secondary)]">
+                      {candidate.user.email} - {roleLabel(candidate.user.role)}
                     </p>
                   </div>
                 </label>
               ))
             ) : (
               <div className="rounded-2xl border border-[color:var(--color-border)] px-4 py-4 text-sm text-[color:var(--color-text-secondary)]">
-                No hay usuarios internos disponibles para invitar en este
-                proyecto.
+                No hay usuarios registrados en el sistema para evaluar.
               </div>
             )}
           </div>
         </div>
 
-        <input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="correo externo opcional"
-          className="taskflow-input"
-        />
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as UserRole)}
@@ -336,7 +374,7 @@ export function InvitationManager({
         <textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Mensaje de bienvenida"
+          placeholder="Mensaje interno de bienvenida"
           className="taskflow-input min-h-28 resize-none"
         />
         <button
@@ -376,7 +414,7 @@ export function InvitationManager({
               value={selectedViewProjectId}
               onChange={(event) => {
                 setSelectedViewProjectId(event.target.value);
-                setSelectedInviteeEmail("ALL");
+                setSelectedInviteeUserId("ALL");
               }}
               className="taskflow-input"
             >
@@ -388,13 +426,13 @@ export function InvitationManager({
               ))}
             </select>
             <select
-              value={selectedInviteeEmail}
-              onChange={(event) => setSelectedInviteeEmail(event.target.value)}
+              value={selectedInviteeUserId}
+              onChange={(event) => setSelectedInviteeUserId(event.target.value)}
               className="taskflow-input"
             >
               <option value="ALL">Todas las personas</option>
               {invitationPeople.map((person) => (
-                <option key={person.email} value={person.email}>
+                <option key={person.userId} value={person.userId}>
                   {person.label} ({person.total})
                 </option>
               ))}
@@ -406,17 +444,16 @@ export function InvitationManager({
           <div className="mt-4 flex flex-wrap gap-2">
             {invitationPeople.map((person) => (
               <button
-                key={person.email}
+                key={person.userId}
                 type="button"
-                onClick={() => setSelectedInviteeEmail(person.email)}
+                onClick={() => setSelectedInviteeUserId(person.userId)}
                 className={`rounded-full border px-3 py-2 text-xs font-medium transition ${
-                  normalizeEmail(selectedInviteeEmail) ===
-                  normalizeEmail(person.email)
+                  selectedInviteeUserId === person.userId
                     ? "border-[color:var(--color-accent)] bg-[color:rgba(28,63,111,0.10)] text-[color:var(--color-accent)]"
                     : "border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text-secondary)]"
                 }`}
               >
-                {person.label} · {person.pending} pendiente(s)
+                {person.label} - {person.pending} pendiente(s)
               </button>
             ))}
           </div>
@@ -433,11 +470,13 @@ export function InvitationManager({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-medium text-[color:var(--color-text-primary)]">
-                    {resolveInviteeName(invitation.email, users)}
+                    {invitation.invitedUser?.name ??
+                      `Usuario ${invitation.invitedUserId.slice(0, 8)}`}
                   </p>
                   <p className="mt-1 text-sm text-[color:var(--color-text-secondary)]">
-                    {invitation.email} · {roleLabel(invitation.role)} ·{" "}
-                    {invitation.project?.name ?? "Proyecto sin nombre"} ·
+                    {invitation.invitedUser?.email ?? "Sin correo"} -{" "}
+                    {roleLabel(invitation.role)} -{" "}
+                    {invitation.project?.name ?? "Proyecto sin nombre"} -
                     Invitado por {invitation.inviter?.name ?? "Sistema"}
                   </p>
                 </div>
@@ -454,7 +493,7 @@ export function InvitationManager({
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-[color:var(--color-text-secondary)]">
-                  Creada {formatDateTime(invitation.createdAt)} · Expira{" "}
+                  Creada {formatDateTime(invitation.createdAt)} - Expira{" "}
                   {formatDateTime(invitation.expiresAt)}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -464,7 +503,7 @@ export function InvitationManager({
                     onClick={() => runAction(invitation.id, "resend")}
                     className="rounded-xl border border-[color:var(--color-border)] px-3 py-2 text-sm font-medium"
                   >
-                    Reenviar
+                    Recordar
                   </button>
                   <button
                     type="button"
@@ -478,7 +517,7 @@ export function InvitationManager({
                     href={`/invitations/${invitation.token}`}
                     className="rounded-xl bg-[color:var(--color-accent)] px-3 py-2 text-sm font-medium text-white"
                   >
-                    Ver enlace
+                    Ver invitacion
                   </a>
                 </div>
               </div>
@@ -486,7 +525,7 @@ export function InvitationManager({
           ))
         ) : (
           <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] px-4 py-6 text-sm leading-7 text-[color:var(--color-text-secondary)]">
-            {selectedInviteeEmail === "ALL"
+            {selectedInviteeUserId === "ALL"
               ? "No hay invitaciones registradas para el filtro actual."
               : "No hay invitaciones registradas para la persona seleccionada en el filtro actual."}
           </div>

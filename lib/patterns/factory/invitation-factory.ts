@@ -18,7 +18,7 @@ abstract class InvitationFactory {
     return {
       id: seed.id ?? crypto.randomUUID(),
       projectId: seed.projectId,
-      email: seed.email,
+      invitedUserId: seed.invitedUserId,
       role: this.normalizeRole(seed.role),
       status: seed.status ?? "PENDING",
       channel: this.channel(),
@@ -49,16 +49,16 @@ abstract class InvitationFactory {
   }
 }
 
-class EmailInvitationFactory extends InvitationFactory {
+class InAppInvitationFactory extends InvitationFactory {
   protected channel(): InvitationChannel {
-    return "EMAIL";
+    return "IN_APP";
   }
 }
 
 export function createInvitationFactory(channel: InvitationChannel) {
   switch (channel) {
-    case "EMAIL":
+    case "IN_APP":
     default:
-      return new EmailInvitationFactory();
+      return new InAppInvitationFactory();
   }
 }

@@ -1,4 +1,4 @@
-import { getSupabaseClientOrThrow } from "@/lib/infrastructure/supabase/supabase-client";
+import { getSupabaseAuthClientOrThrow } from "@/lib/infrastructure/supabase/supabase-client";
 import type {
   PasswordAuthInput,
   TaskflowAuthProvider,
@@ -13,7 +13,7 @@ export class SupabaseAuthProvider implements TaskflowAuthProvider {
   constructor(private readonly repository: TaskflowRepository) {}
 
   async authenticateWithPassword(input: PasswordAuthInput) {
-    const client = await getSupabaseClientOrThrow();
+    const client = getSupabaseAuthClientOrThrow();
     const email = input.email.trim().toLowerCase();
     const password = input.password.trim();
 
@@ -49,6 +49,10 @@ export class SupabaseAuthProvider implements TaskflowAuthProvider {
     return {
       user: await this.resolveAuthenticatedUser(data.user),
       accessToken: data.session?.access_token,
+      refreshToken: data.session?.refresh_token,
+      accessTokenExpiresAt: data.session?.expires_at
+        ? new Date(data.session.expires_at * 1000).toISOString()
+        : undefined,
     };
   }
 

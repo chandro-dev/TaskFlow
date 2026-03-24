@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BellIcon } from "@/components/taskflow/icons";
 import type { NotificationCenterView, ProjectNotificationView } from "@/lib/domain/models";
@@ -29,6 +29,19 @@ function groupByProject(notifications: ProjectNotificationView[]) {
   );
 }
 
+async function fetchNotificationCenter() {
+  const response = await fetch("/api/notifications", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("No fue posible actualizar las notificaciones.");
+  }
+
+  return (await response.json()) as NotificationCenterView;
+}
+
 export function NotificationCenter({ initialCenter }: NotificationCenterProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -37,6 +50,38 @@ export function NotificationCenter({ initialCenter }: NotificationCenterProps) {
     sortNotifications(initialCenter.notifications),
   );
   const [unreadCount, setUnreadCount] = useState(initialCenter.unreadCount);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function refreshCenter() {
+      try {
+        const center = await fetchNotificationCenter();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setNotifications(sortNotifications(center.notifications));
+        setUnreadCount(center.unreadCount);
+      } catch {
+        if (!isCancelled && open) {
+          startTransition(() => router.refresh());
+        }
+      }
+    }
+
+    void refreshCenter();
+
+    const intervalId = window.setInterval(() => {
+      void refreshCenter();
+    }, 10000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [open, router]);
 
   async function markAsRead(notificationId: string) {
     const target = notifications.find((item) => item.id === notificationId);

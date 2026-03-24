@@ -42,7 +42,7 @@ export class ProjectQueryService {
     return {
       currentUser: snapshot.currentUser,
       settings: snapshot.settings,
-      users: snapshot.users.filter((user) => user.isActive),
+      users: snapshot.users,
       projects: filteredProjects.map((project) =>
         buildProjectCard(project, snapshot, activeUser),
       ),
@@ -59,6 +59,10 @@ export class ProjectQueryService {
           ...invitation,
           inviter:
             snapshot.users.find((user) => user.id === invitation.invitedBy) ?? null,
+          invitedUser:
+            snapshot.users.find(
+              (user) => user.id === invitation.invitedUserId,
+            ) ?? null,
           project:
             snapshot.projects.find(
               (project) => project.id === invitation.projectId,

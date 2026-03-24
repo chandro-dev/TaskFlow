@@ -1,6 +1,6 @@
 import type { UserRole } from "@/lib/domain/models";
 import { TaskflowService } from "@/lib/application/taskflow-service";
-import { requireProjectMemberRouteUser } from "@/lib/api/route-authorization";
+import { requireProjectCoordinatorRouteUser } from "@/lib/api/route-authorization";
 import { buildRouteErrorResponse } from "@/lib/api/route-errors";
 
 const service = new TaskflowService();
@@ -19,29 +19,25 @@ export async function POST(
 ) {
   const { projectId } = await context.params;
   const body = (await request.json()) as {
-    email?: string;
-    emails?: string[];
+    userIds?: string[];
     role?: string;
     message?: string;
   };
 
-  const emails = [
-    ...(body.email?.trim() ? [body.email.trim().toLowerCase()] : []),
-    ...((body.emails ?? []).map((email) => email.trim().toLowerCase())),
-  ];
+  const userIds = (body.userIds ?? []).map((userId) => userId.trim());
 
-  if (!emails.length) {
+  if (!userIds.length) {
     return Response.json(
-      { error: "Debes indicar al menos un correo." },
+      { error: "Debes seleccionar al menos una persona interna." },
       { status: 422 },
     );
   }
 
   try {
-    const currentUser = await requireProjectMemberRouteUser(projectId);
+    const currentUser = await requireProjectCoordinatorRouteUser(projectId);
     const invitations = await service.createInvitations({
       projectId,
-      emails,
+      invitedUserIds: userIds,
       role: parseRole(body.role ?? "DEVELOPER"),
       invitedBy: currentUser.id,
       message: body.message?.trim(),

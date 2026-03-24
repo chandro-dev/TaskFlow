@@ -21,10 +21,19 @@ export class InvitationCreationGuard {
       throw new Error("No puedes invitar miembros a un proyecto archivado.");
     }
 
-    const normalizedEmail = draft.email.trim().toLowerCase();
+    const invitedUser = snapshot.users.find(
+      (user) => user.id === draft.invitedUserId,
+    );
+
+    if (!invitedUser || !invitedUser.isActive) {
+      throw new Error(
+        "La invitacion solo puede enviarse a usuarios internos activos de la aplicacion.",
+      );
+    }
+
     const alreadyMember = snapshot.users.find(
       (user) =>
-        user.email.toLowerCase() === normalizedEmail &&
+        user.id === draft.invitedUserId &&
         project.memberIds.includes(user.id),
     );
 
@@ -35,7 +44,7 @@ export class InvitationCreationGuard {
     const pendingInvitation = snapshot.invitations.find(
       (invitation) =>
         invitation.projectId === draft.projectId &&
-        invitation.email.toLowerCase() === normalizedEmail &&
+        invitation.invitedUserId === draft.invitedUserId &&
         invitation.status === "PENDING",
     );
 

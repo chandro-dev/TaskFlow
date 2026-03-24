@@ -48,7 +48,7 @@ enum InvitationStatus {
 }
 
 enum InvitationChannel {
-  EMAIL
+  IN_APP
 }
 
 enum NotificationKind {
@@ -80,6 +80,7 @@ model Profile {
   historyEntries  TaskHistory[]
   savedFilters    SavedFilter[]
   sentInvitations MemberInvitation[] @relation("InvitationSender")
+  receivedInvitations MemberInvitation[] @relation("InvitationRecipient")
   notifications   ProjectNotification[] @relation("NotificationRecipient")
   notificationEvents ProjectNotification[] @relation("NotificationActor")
 
@@ -300,10 +301,11 @@ model SavedFilter {
 model MemberInvitation {
   id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId  String            @map("project_id") @db.Uuid
+  invitedUserId String         @map("invited_user_id") @db.Uuid
   email      String
   role       UserRole          @default(DEVELOPER)
   status     InvitationStatus  @default(PENDING)
-  channel    InvitationChannel @default(EMAIL)
+  channel    InvitationChannel @default(IN_APP)
   invitedBy  String            @map("invited_by") @db.Uuid
   token      String            @unique
   message    String?
@@ -313,7 +315,9 @@ model MemberInvitation {
   updatedAt  DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
   project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inviter    Profile           @relation("InvitationSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+  invitedUser Profile          @relation("InvitationRecipient", fields: [invitedUserId], references: [id], onDelete: Cascade)
 
+  @@index([invitedUserId, status])
   @@index([projectId, status])
   @@map("member_invitations")
 }

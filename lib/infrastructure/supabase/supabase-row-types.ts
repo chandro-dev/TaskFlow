@@ -107,6 +107,7 @@ export interface SettingsRow {
 export interface InvitationRow {
   id: string;
   project_id: string;
+  invited_user_id: string;
   email: string;
   role: MemberInvitation["role"];
   status: MemberInvitation["status"];

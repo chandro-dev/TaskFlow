@@ -10,9 +10,7 @@ export class InvitationQueryService {
   }
 
   async getInvitationByToken(token: string) {
-    console.log(token);
     const invitation = await this.repository.findInvitationByToken(token);
-    console.log(invitation);
     if (!invitation) {
       return null;
     }

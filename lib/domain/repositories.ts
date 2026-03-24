@@ -30,6 +30,7 @@ export interface TaskflowRepository {
   deleteProject(projectId: string): Promise<void>;
   createBoard(input: CreateBoardInput): Promise<Board>;
   createTask(input: CreateTaskInput): Promise<Task>;
+  moveTask(input: MoveTaskInput): Promise<Task>;
   createNotifications(
     input: CreateProjectNotificationInput[],
   ): Promise<ProjectNotification[]>;

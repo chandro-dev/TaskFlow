@@ -79,6 +79,28 @@ const users: UserProfile[] = [
     themePreference: "light",
     isActive: false,
   },
+  {
+    id: "user-dev-3",
+    name: "Sofia Castro",
+    email: "sofia@taskflow.dev",
+    role: "DEVELOPER",
+    avatar: "SC",
+    bio: "QA y soporte funcional para pruebas de invitaciones internas.",
+    lastAccess: "2026-03-20T11:20:00.000Z",
+    themePreference: "light",
+    isActive: true,
+  },
+  {
+    id: "user-dev-4",
+    name: "Carolina Vega",
+    email: "carolina@taskflow.dev",
+    role: "DEVELOPER",
+    avatar: "CV",
+    bio: "Analista funcional para seguimiento de proyectos.",
+    lastAccess: "2026-03-19T16:40:00.000Z",
+    themePreference: "dark",
+    isActive: true,
+  },
 ];
 
 const settings: SystemSettings = {
@@ -367,9 +389,9 @@ function buildWebTasks() {
       projectId: "project-web",
       boardId: "board-web-main",
       columnId: "column-done",
-      title: "Invitar miembros por correo",
+      title: "Invitar miembros en la app",
       description:
-        "Incorporar miembros al proyecto con rol y permisos diferenciados.",
+        "Incorporar miembros al proyecto con rol y permisos diferenciados dentro de la aplicacion.",
       dueDate: "2026-03-16",
       estimateHours: 8,
       spentHours: 7,
@@ -403,13 +425,13 @@ function buildProjects() {
 
 function buildInvitations(): MemberInvitation[] {
   const baseInvitation = new MemberInvitationBuilder(
-    createInvitationFactory("EMAIL").create({
+    createInvitationFactory("IN_APP").create({
       id: "invite-frontend",
       projectId: "project-web",
-      email: "sofia@taskflow.dev",
+      invitedUserId: "user-dev-3",
       role: "DEVELOPER",
       invitedBy: "user-pm",
-      message: "Necesitamos apoyo en la implementacion de tableros y filtros.",
+      message: "Necesitamos apoyo en la implementacion de tableros y filtros dentro del proyecto.",
     }),
   )
     .withExpiry(5)
@@ -417,18 +439,18 @@ function buildInvitations(): MemberInvitation[] {
 
   const resentInvitation = new InvitationPrototype(baseInvitation).clone({
     id: "invite-ux",
-    email: "carolina@taskflow.dev",
+    invitedUserId: "user-dev-4",
     message: "Invitacion para colaborar en el sprint de experiencia de usuario.",
   });
 
   const acceptedInvitation = new MemberInvitationBuilder(
-    createInvitationFactory("EMAIL").create({
+    createInvitationFactory("IN_APP").create({
       id: "invite-backend",
       projectId: "project-mobile",
-      email: "diego@taskflow.dev",
+      invitedUserId: "user-dev-2",
       role: "DEVELOPER",
       invitedBy: "user-admin",
-      message: "Apoyo puntual para integracion de soporte movil.",
+      message: "Apoyo puntual para integracion de soporte movil dentro de la app.",
     }),
   )
     .asAccepted()

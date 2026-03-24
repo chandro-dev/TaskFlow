@@ -7,6 +7,8 @@ export interface SessionPayload {
   userId: string;
   email: string;
   accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpiresAt?: string;
   expiresAt: string;
 }
 
@@ -33,6 +35,18 @@ function signPayload(encodedPayload: string) {
 function serializeSession(payload: SessionPayload) {
   const encodedPayload = encodePayload(payload);
   return `${encodedPayload}.${signPayload(encodedPayload)}`;
+}
+
+async function persistSession(sessionPayload: SessionPayload) {
+  (await cookies()).set({
+    name: SESSION_COOKIE_NAME,
+    value: serializeSession(sessionPayload),
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    expires: new Date(sessionPayload.expiresAt),
+    path: "/",
+  });
 }
 
 function parseSessionValue(value: string): SessionPayload | null {
@@ -78,15 +92,7 @@ export async function createSession(payload: Omit<SessionPayload, "expiresAt">) 
     expiresAt: expiresAt.toISOString(),
   };
 
-  (await cookies()).set({
-    name: SESSION_COOKIE_NAME,
-    value: serializeSession(sessionPayload),
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
-    path: "/",
-  });
+  await persistSession(sessionPayload);
 }
 
 export async function clearSession() {
@@ -110,4 +116,30 @@ export async function getSession() {
   }
 
   return parseSessionValue(value);
+}
+
+export async function updateSessionTokens(
+  nextTokens: Pick<
+    SessionPayload,
+    "accessToken" | "refreshToken" | "accessTokenExpiresAt"
+  >,
+) {
+  const session = await getSession();
+
+  if (!session) {
+    return null;
+  }
+
+  const updatedSession: SessionPayload = {
+    ...session,
+    ...nextTokens,
+  };
+
+  try {
+    await persistSession(updatedSession);
+  } catch {
+    return updatedSession;
+  }
+
+  return updatedSession;
 }

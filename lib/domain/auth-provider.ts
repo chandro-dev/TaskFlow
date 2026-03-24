@@ -8,6 +8,8 @@ export interface PasswordAuthInput {
 export interface AuthenticationResult {
   user: UserProfile;
   accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpiresAt?: string;
 }
 
 export interface TaskflowAuthProvider {

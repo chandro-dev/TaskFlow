@@ -113,7 +113,7 @@ export class TaskflowService {
   }
 
   async createInvitations(
-    input: Omit<CreateInvitationInput, "email"> & { emails: string[] },
+    input: Omit<CreateInvitationInput, "invitedUserId"> & { invitedUserIds: string[] },
   ) {
     return this.services.invitationCommands.createInvitations(input);
   }

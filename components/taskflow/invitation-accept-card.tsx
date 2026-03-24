@@ -44,7 +44,8 @@ export function InvitationAcceptCard({
         {invitation.project?.name ?? "Proyecto"} te espera en Taskflow
       </h1>
       <div className="mt-6 space-y-3 text-sm text-[color:var(--color-text-secondary)]">
-        <p>Correo invitado: {invitation.email}</p>
+        <p>Invitado: {invitation.invitedUser?.name ?? "Usuario interno"}</p>
+        <p>Correo: {invitation.invitedUser?.email ?? "Sin correo"}</p>
         <p>Rol asignado: {roleLabel(invitation.role)}</p>
         <p>Invitado por: {invitation.inviter?.name ?? "Sistema"}</p>
         <p>Expira: {formatDateTime(invitation.expiresAt)}</p>

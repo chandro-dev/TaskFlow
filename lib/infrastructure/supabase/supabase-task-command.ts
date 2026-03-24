@@ -28,27 +28,24 @@ export class SupabaseTaskCommand {
     }
 
     const draftTask = this.buildDraftTask(input, targetColumnId);
-    const { data: taskRow, error: taskError } = await this.client
-      .from("tasks")
-      .insert({
-        project_id: draftTask.projectId,
-        board_id: draftTask.boardId,
-        column_id: draftTask.columnId,
-        title: draftTask.title,
-        description: draftTask.description,
-        priority: draftTask.priority,
-        type: draftTask.type,
-        due_date: draftTask.dueDate,
-        estimate_hours: draftTask.estimateHours,
-        spent_hours: draftTask.spentHours,
-        created_by: input.actorId,
-        assignee_ids: draftTask.assigneeIds,
-      })
-      .select("*")
-      .single();
+    const { data: taskRow, error: taskError } = await this.client.rpc(
+      "create_project_task_with_notifications",
+      {
+        target_project_id: draftTask.projectId,
+        target_board_id: draftTask.boardId,
+        target_column_id: draftTask.columnId,
+        target_title: draftTask.title,
+        target_description: draftTask.description,
+        target_priority: draftTask.priority,
+        target_type: draftTask.type,
+        target_due_date: draftTask.dueDate,
+        target_estimate_hours: draftTask.estimateHours,
+        target_assignee_ids: draftTask.assigneeIds,
+      },
+    );
 
     if (taskError || !taskRow) {
-      throw new Error("No fue posible crear la tarea.");
+      throw new Error(taskError?.message ?? "No fue posible crear la tarea.");
     }
 
     const historyEntry = await this.createCreationHistory(

@@ -140,7 +140,7 @@ export function normalizeInvitation(row: InvitationRow): MemberInvitation {
   return {
     id: row.id,
     projectId: row.project_id,
-    email: row.email,
+    invitedUserId: row.invited_user_id,
     role: row.role,
     status: row.status,
     channel: row.channel,

@@ -38,14 +38,6 @@ export class TaskCommandService {
       description,
     });
 
-    await this.notificationPublisher.publish({
-      kind: "TASK_CREATED",
-      projectId: task.projectId,
-      actorId: input.actorId,
-      boardId: task.boardId,
-      taskId: task.id,
-    });
-
     return task;
   }
 }

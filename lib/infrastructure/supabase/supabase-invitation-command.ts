@@ -11,27 +11,20 @@ export class SupabaseInvitationCommand {
   constructor(private readonly client: SupabaseClient) {}
 
   async createInvitation(input: CreateInvitationInput): Promise<MemberInvitation> {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const { data, error } = await this.client
-      .from("member_invitations")
-      .insert({
-        project_id: input.projectId,
-        email: input.email,
-        role: input.role,
-        status: "PENDING",
-        channel: "EMAIL",
-        invited_by: input.invitedBy,
-        token: crypto.randomUUID().replace(/-/g, ""),
-        message: input.message ?? null,
-        expires_at: expiresAt.toISOString(),
-      })
-      .select("*")
-      .single();
+    const { data, error } = await this.client.rpc(
+      "create_internal_member_invitation",
+      {
+        target_project_id: input.projectId,
+        target_invited_user_id: input.invitedUserId,
+        target_role: input.role,
+        target_message: input.message ?? null,
+      },
+    );
 
     if (error || !data) {
-      throw new Error("No fue posible crear la invitacion.");
+      throw new Error(
+        error?.message ?? "No fue posible crear la invitacion.",
+      );
     }
 
     return normalizeInvitation(data as InvitationRow);
@@ -40,9 +33,13 @@ export class SupabaseInvitationCommand {
   async updateInvitationStatus(
     input: UpdateInvitationStatusInput,
   ): Promise<MemberInvitation> {
+    if (input.status === "ACCEPTED") {
+      return this.acceptInvitation(input.invitationId);
+    }
+
     const updatePayload = {
       status: input.status,
-      accepted_at: input.status === "ACCEPTED" ? new Date().toISOString() : null,
+      accepted_at: null,
     };
 
     const { data, error } = await this.client
@@ -56,28 +53,16 @@ export class SupabaseInvitationCommand {
       throw new Error("No fue posible actualizar la invitacion.");
     }
 
-    if (input.status === "ACCEPTED") {
-      await this.attachAcceptedInvitationMember(data as InvitationRow);
-    }
-
     return normalizeInvitation(data as InvitationRow);
   }
 
   async resendInvitation(invitationId: string): Promise<MemberInvitation> {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const { data, error } = await this.client
-      .from("member_invitations")
-      .update({
-        status: "PENDING",
-        accepted_at: null,
-        token: crypto.randomUUID().replace(/-/g, ""),
-        expires_at: expiresAt.toISOString(),
-      })
-      .eq("id", invitationId)
-      .select("*")
-      .single();
+    const { data, error } = await this.client.rpc(
+      "resend_internal_member_invitation",
+      {
+        target_invitation_id: invitationId,
+      },
+    );
 
     if (error || !data) {
       throw new Error("No fue posible reenviar la invitacion.");
@@ -100,22 +85,32 @@ export class SupabaseInvitationCommand {
     return data ? normalizeInvitation(data as InvitationRow) : null;
   }
 
-  private async attachAcceptedInvitationMember(invitation: InvitationRow) {
-    const { data: user } = await this.client
-      .from("profiles")
-      .select("id")
-      .eq("email", invitation.email)
-      .maybeSingle();
+  private async acceptInvitation(invitationId: string) {
+    const { data: invitation, error: lookupError } = await this.client
+      .from("member_invitations")
+      .select("token")
+      .eq("id", invitationId)
+      .single();
 
-    if (!user?.id) {
-      return;
+    if (lookupError || !invitation?.token) {
+      throw new Error(
+        lookupError?.message ?? "No fue posible localizar la invitacion a aceptar.",
+      );
     }
 
-    await this.client.from("project_members").upsert({
-      project_id: invitation.project_id,
-      user_id: user.id,
-      member_role: invitation.role,
-      invited_by: invitation.invited_by,
-    });
+    const { data, error } = await this.client.rpc(
+      "accept_internal_member_invitation",
+      {
+        target_token: invitation.token,
+      },
+    );
+
+    if (error || !data) {
+      throw new Error(
+        error?.message ?? "No fue posible aceptar la invitacion.",
+      );
+    }
+
+    return normalizeInvitation(data as InvitationRow);
   }
 }

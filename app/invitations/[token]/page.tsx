@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { InvitationAcceptCard } from "@/components/taskflow/invitation-accept-card";
 import { TaskflowService } from "@/lib/application/taskflow-service";
+import { requireAuthenticatedUser } from "@/lib/auth/current-user";
 
 const service = new TaskflowService();
 
@@ -10,10 +11,10 @@ export default async function InvitationPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  console.log(token);
+  const currentUser = await requireAuthenticatedUser();
   const invitation = await service.getInvitationByToken(token);
 
-  if (!invitation) {
+  if (!invitation || invitation.invitedUserId !== currentUser.id) {
     notFound();
   }
 

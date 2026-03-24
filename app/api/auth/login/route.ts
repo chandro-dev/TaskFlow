@@ -9,7 +9,6 @@ export async function POST(request: Request) {
     email?: string;
     password?: string;
   };
-  console.log("Login request body:", body);
   try {
     const result = await service.login({
       email: body.email ?? "",
@@ -20,6 +19,8 @@ export async function POST(request: Request) {
       userId: result.user.id,
       email: result.user.email,
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      accessTokenExpiresAt: result.accessTokenExpiresAt,
     });
 
     return Response.json({ user: result.user });

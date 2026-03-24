@@ -1,5 +1,8 @@
 import type { TaskflowRepository } from "@/lib/domain/repositories";
-import { getSupabaseClientOrThrow } from "@/lib/infrastructure/supabase/supabase-client";
+import {
+  getSupabaseAuthClientOrThrow,
+  getSupabaseClientOrThrow,
+} from "@/lib/infrastructure/supabase/supabase-client";
 import { SupabaseAuthCommand } from "@/lib/infrastructure/supabase/supabase-auth-command";
 import { SupabaseBoardCommand } from "@/lib/infrastructure/supabase/supabase-board-command";
 import { SupabaseInvitationCommand } from "@/lib/infrastructure/supabase/supabase-invitation-command";
@@ -37,7 +40,7 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     const { data, error } = await client
       .from("profiles")
       .select("*")
-      .eq("email", email.trim().toLowerCase())
+      .ilike("email", email.trim())
       .maybeSingle();
 
     if (error) {
@@ -48,7 +51,7 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
   }
 
   async registerUser(input: Parameters<TaskflowRepository["registerUser"]>[0]) {
-    const client = await getSupabaseClientOrThrow();
+    const client = getSupabaseAuthClientOrThrow();
     return new SupabaseAuthCommand(client).registerUser(input);
   }
 

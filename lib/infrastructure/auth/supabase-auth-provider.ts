@@ -3,14 +3,14 @@ import type {
   PasswordAuthInput,
   TaskflowAuthProvider,
 } from "@/lib/domain/auth-provider";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { hasSupabaseServiceRoleKey } from "@/lib/infrastructure/auth/auth-mode";
 import { mapAuthUserToProfile } from "@/lib/infrastructure/supabase/supabase-auth-user-mapper";
 import { ensureProfileForAuthUser } from "@/lib/infrastructure/supabase/supabase-profile-admin";
 import { HttpError } from "@/lib/shared/http-error";
 
 export class SupabaseAuthProvider implements TaskflowAuthProvider {
-  constructor(private readonly repository: TaskflowRepository) {}
+  constructor(private readonly repository: IRepositroyFlow) {}
 
   async authenticateWithPassword(input: PasswordAuthInput) {
     const client = getSupabaseAuthClientOrThrow();

@@ -1,11 +1,11 @@
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import { hydrateInvitation } from "@/lib/application/shared/workspace-mappers";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 
 export class InvitationQueryService {
   private readonly snapshotLoader: SnapshotLoader;
 
-  constructor(private readonly repository: TaskflowRepository) {
+  constructor(private readonly repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
 

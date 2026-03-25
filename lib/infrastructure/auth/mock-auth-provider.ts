@@ -2,11 +2,11 @@ import type {
   PasswordAuthInput,
   TaskflowAuthProvider,
 } from "@/lib/domain/auth-provider";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { HttpError } from "@/lib/shared/http-error";
 
 export class MockAuthProvider implements TaskflowAuthProvider {
-  constructor(private readonly repository: TaskflowRepository) {}
+  constructor(private readonly repository: IRepositroyFlow) {}
 
   async authenticateWithPassword(input: PasswordAuthInput) {
     const email = input.email.trim().toLowerCase();

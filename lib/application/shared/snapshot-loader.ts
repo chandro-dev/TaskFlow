@@ -1,5 +1,5 @@
 import type { TaskflowSnapshot } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { MockTaskflowRepository } from "@/lib/infrastructure/mock/mock-repository";
 import {
   FALLBACK_SETTINGS,
@@ -28,7 +28,7 @@ function normalizeSnapshot(snapshot: TaskflowSnapshot): TaskflowSnapshot {
 }
 
 export class SnapshotLoader {
-  constructor(private readonly repository: TaskflowRepository) {}
+  constructor(private readonly repository: IRepositroyFlow) {}
 
   async load() {
     try {

@@ -1,8 +1,8 @@
 import type { RegisterUserInput } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 
 export class AuthCommandService {
-  constructor(private readonly repository: TaskflowRepository) {}
+  constructor(private readonly repository: IRepositroyFlow) {}
 
   async registerUser(input: RegisterUserInput) {
     return this.repository.registerUser(input);

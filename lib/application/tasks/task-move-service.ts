@@ -1,8 +1,8 @@
 import type { MoveTaskInput } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 
 export class TaskMoveService {
-  constructor(private readonly repository: TaskflowRepository) {}
+  constructor(private readonly repository: IRepositroyFlow) {}
 
   async moveTask(input: MoveTaskInput) {
     if (!input.actorId) {

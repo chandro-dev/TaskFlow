@@ -1,12 +1,12 @@
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import type { UpdateTaskInput } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { TaskUpdateBuilder } from "@/lib/patterns/builder/task-update-builder";
 
 export class TaskUpdateService {
   private readonly snapshotLoader: SnapshotLoader;
 
-  constructor(private readonly repository: TaskflowRepository) {
+  constructor(private readonly repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
 

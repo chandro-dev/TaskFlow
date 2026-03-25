@@ -1,12 +1,12 @@
 import type { CloneTaskRequestInput, Subtask } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import { SubtaskPrototype, TaskPrototype } from "@/lib/patterns/prototype/clone";
 
 export class TaskCloneService {
   private readonly snapshotLoader: SnapshotLoader;
 
-  constructor(private readonly repository: TaskflowRepository) {
+  constructor(private readonly repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
 

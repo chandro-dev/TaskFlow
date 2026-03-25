@@ -3,7 +3,7 @@ import type {
   TaskFilters,
   UserProfile,
 } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import {
   buildProjectMembers,
@@ -16,7 +16,7 @@ import {
 export class ProjectQueryService {
   private readonly snapshotLoader: SnapshotLoader;
 
-  constructor(repository: TaskflowRepository) {
+  constructor(repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
 

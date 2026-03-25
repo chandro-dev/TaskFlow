@@ -15,13 +15,13 @@ import type {
 import type { PasswordAuthInput } from "@/lib/domain/auth-provider";
 import { createApplicationServices } from "@/lib/application/application-service-factory";
 import { createTaskflowRepository } from "@/lib/infrastructure/repository-factory";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 
 export class TaskflowService {
-  private readonly repository: TaskflowRepository;
+  private readonly repository: IRepositroyFlow;
   private readonly services: ReturnType<typeof createApplicationServices>;
 
-  constructor(repository: TaskflowRepository = createTaskflowRepository()) {
+  constructor(repository: IRepositroyFlow = createTaskflowRepository()) {
     // This facade keeps route handlers thin. They talk to one entry point while
     // the real work stays split into focused application services.
     this.repository = repository;
@@ -152,7 +152,7 @@ export class TaskflowService {
     return this.services.invitationQueries.getInvitationByToken(token);
   }
 
-  async registerUser(input: Parameters<TaskflowRepository["registerUser"]>[0]) {
+  async registerUser(input: Parameters<IRepositroyFlow["registerUser"]>[0]) {
     return this.services.authCommands.registerUser(input);
   }
 

@@ -1,5 +1,5 @@
 import type { CreateInvitationInput } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { InvitationQueryService } from "@/lib/application/invitations/invitation-query-service";
 import { InvitationCreationGuard } from "@/lib/application/invitations/invitation-creation-guard";
 import type { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
@@ -9,7 +9,7 @@ export class InvitationCommandService {
   private readonly invitationCreationGuard: InvitationCreationGuard;
 
   constructor(
-    private readonly repository: TaskflowRepository,
+    private readonly repository: IRepositroyFlow,
     private readonly notificationPublisher: ProjectEventPublisher,
   ) {
     this.invitationQueryService = new InvitationQueryService(repository);

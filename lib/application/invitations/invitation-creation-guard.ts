@@ -1,11 +1,11 @@
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import type { InvitationDraft } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 
 export class InvitationCreationGuard {
   private readonly snapshotLoader: SnapshotLoader;
 
-  constructor(repository: TaskflowRepository) {
+  constructor(repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
 

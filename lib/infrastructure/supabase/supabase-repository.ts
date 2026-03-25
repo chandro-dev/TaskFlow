@@ -1,4 +1,4 @@
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import {
   getSupabaseAuthClientOrThrow,
   getSupabaseClientOrThrow,
@@ -14,7 +14,7 @@ import { SupabaseTaskCommand } from "@/lib/infrastructure/supabase/supabase-task
 import { normalizeUser } from "@/lib/infrastructure/supabase/supabase-normalizers";
 import type { ProfileRow } from "@/lib/infrastructure/supabase/supabase-row-types";
 
-export class SupabaseTaskflowRepository implements TaskflowRepository {
+export class SupabaseTaskflowRepository implements IRepositroyFlow {
   async loadSnapshot() {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseSnapshotQuery(client).loadSnapshot();
@@ -50,17 +50,17 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     return data ? normalizeUser(data as ProfileRow) : null;
   }
 
-  async registerUser(input: Parameters<TaskflowRepository["registerUser"]>[0]) {
+  async registerUser(input: Parameters<IRepositroyFlow["registerUser"]>[0]) {
     const client = getSupabaseAuthClientOrThrow();
     return new SupabaseAuthCommand(client).registerUser(input);
   }
 
-  async createProject(input: Parameters<TaskflowRepository["createProject"]>[0]) {
+  async createProject(input: Parameters<IRepositroyFlow["createProject"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseProjectCommand(client).createProject(input);
   }
 
-  async updateProject(input: Parameters<TaskflowRepository["updateProject"]>[0]) {
+  async updateProject(input: Parameters<IRepositroyFlow["updateProject"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseProjectCommand(client).updateProject(input);
   }
@@ -78,7 +78,7 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
   async updateProjectMemberRole(
     projectId: string,
     memberId: string,
-    memberRole: Parameters<TaskflowRepository["updateProjectMemberRole"]>[2],
+    memberRole: Parameters<IRepositroyFlow["updateProjectMemberRole"]>[2],
   ) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseProjectCommand(client).updateProjectMemberRole(
@@ -88,33 +88,33 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     );
   }
 
-  async createBoard(input: Parameters<TaskflowRepository["createBoard"]>[0]) {
+  async createBoard(input: Parameters<IRepositroyFlow["createBoard"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseBoardCommand(client).createBoard(input);
   }
 
-  async createTask(input: Parameters<TaskflowRepository["createTask"]>[0]) {
+  async createTask(input: Parameters<IRepositroyFlow["createTask"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseTaskCommand(client).createTask(input);
   }
 
-  async updateTask(input: Parameters<TaskflowRepository["updateTask"]>[0]) {
+  async updateTask(input: Parameters<IRepositroyFlow["updateTask"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseTaskCommand(client).updateTask(input);
   }
 
-  async cloneTask(input: Parameters<TaskflowRepository["cloneTask"]>[0]) {
+  async cloneTask(input: Parameters<IRepositroyFlow["cloneTask"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseTaskCommand(client).cloneTask(input);
   }
 
-  async moveTask(input: Parameters<TaskflowRepository["moveTask"]>[0]) {
+  async moveTask(input: Parameters<IRepositroyFlow["moveTask"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseTaskCommand(client).moveTask(input);
   }
 
   async createNotifications(
-    input: Parameters<TaskflowRepository["createNotifications"]>[0],
+    input: Parameters<IRepositroyFlow["createNotifications"]>[0],
   ) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseNotificationCommand(client).createNotifications(input);
@@ -140,14 +140,14 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     return new SupabaseNotificationCommand(client).clearNotifications(recipientId);
   }
 
-  async updateSettings(input: Parameters<TaskflowRepository["updateSettings"]>[0]) {
+  async updateSettings(input: Parameters<IRepositroyFlow["updateSettings"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseSettingsCommand(client).updateSettings(input);
   }
 
   async updateUserThemePreference(
     userId: string,
-    mode: Parameters<TaskflowRepository["updateUserThemePreference"]>[1],
+    mode: Parameters<IRepositroyFlow["updateUserThemePreference"]>[1],
   ) {
     const client = await getSupabaseClientOrThrow();
     const { data, error } = await client
@@ -164,13 +164,13 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     return normalizeUser(data as ProfileRow);
   }
 
-  async createInvitation(input: Parameters<TaskflowRepository["createInvitation"]>[0]) {
+  async createInvitation(input: Parameters<IRepositroyFlow["createInvitation"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseInvitationCommand(client).createInvitation(input);
   }
 
   async updateInvitationStatus(
-    input: Parameters<TaskflowRepository["updateInvitationStatus"]>[0],
+    input: Parameters<IRepositroyFlow["updateInvitationStatus"]>[0],
   ) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseInvitationCommand(client).updateInvitationStatus(input);

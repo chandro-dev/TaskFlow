@@ -1,4 +1,4 @@
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { MockTaskflowRepository } from "@/lib/infrastructure/mock/mock-repository";
 import { SupabaseTaskflowRepository } from "@/lib/infrastructure/supabase/supabase-repository";
 
@@ -18,7 +18,7 @@ function hasConfiguredSupabaseEnv() {
   return !looksLikePlaceholder;
 }
 
-export function createTaskflowRepository(): TaskflowRepository {
+export function createTaskflowRepository(): IRepositroyFlow {
   // The app always depends on the repository contract. This factory is the
   // only place that decides whether the runtime should use Supabase or the
   // in-memory mock fallback.

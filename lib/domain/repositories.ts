@@ -24,7 +24,7 @@ import type {
   UserProfile,
 } from "@/lib/domain/models";
 
-export interface TaskflowRepository {
+export interface IRepositroyFlow {
   loadSnapshot(): Promise<TaskflowSnapshot>;
   findUserById(userId: string): Promise<UserProfile | null>;
   findUserByEmail(email: string): Promise<UserProfile | null>;

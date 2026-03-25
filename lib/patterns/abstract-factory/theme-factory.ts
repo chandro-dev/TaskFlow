@@ -51,6 +51,7 @@ class LightThemeFactory implements ThemeFactory {
   }
 }
 
+
 class DarkThemeFactory implements ThemeFactory {
   createPalette(): ThemePalette {
     return {

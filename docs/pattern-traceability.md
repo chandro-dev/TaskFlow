@@ -2,6 +2,8 @@
 
 Este mapa resume donde vive cada patron y en que flujo principal se activa.
 
+Si necesitas la explicacion completa, revisa tambien `docs/design-patterns-guide.md`.
+
 ## Singleton
 
 - Implementacion: [theme-singleton.ts](/e:/proyectos/taskflow/lib/patterns/singleton/theme-singleton.ts)

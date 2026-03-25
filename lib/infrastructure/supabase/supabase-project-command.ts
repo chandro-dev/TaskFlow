@@ -33,7 +33,7 @@ export class SupabaseProjectCommand {
     const tempProjectId = crypto.randomUUID();
     const builtProject = projectDraft.buildProject(tempProjectId);
     const { board, columns } = createBoardFactory().create(tempProjectId);
-
+    //Ingresar a base de datos
     const { data: projectRow, error: projectError } = await this.client
       .from("projects")
       .insert({
@@ -55,7 +55,7 @@ export class SupabaseProjectCommand {
     }
 
     const projectId = (projectRow as ProjectRow).id;
-
+    //Anexa al usuario Creador como miembro del proyecto con rol de Project Manager
     const { error: memberError } = await this.client.from("project_members").upsert({
       project_id: projectId,
       user_id: builtProject.ownerId,

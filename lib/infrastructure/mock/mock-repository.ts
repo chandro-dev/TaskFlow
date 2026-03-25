@@ -1,7 +1,7 @@
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { MockTaskflowStore } from "@/lib/infrastructure/mock/mock-store";
 
-export class MockTaskflowRepository implements TaskflowRepository {
+export class MockTaskflowRepository implements IRepositroyFlow {
   private readonly store = MockTaskflowStore.getInstance();
 
   async loadSnapshot() {
@@ -16,15 +16,15 @@ export class MockTaskflowRepository implements TaskflowRepository {
     return this.store.findUserByEmail(email);
   }
 
-  async registerUser(input: Parameters<TaskflowRepository["registerUser"]>[0]) {
+  async registerUser(input: Parameters<IRepositroyFlow["registerUser"]>[0]) {
     return this.store.registerUser(input);
   }
 
-  async createProject(input: Parameters<TaskflowRepository["createProject"]>[0]) {
+  async createProject(input: Parameters<IRepositroyFlow["createProject"]>[0]) {
     return this.store.createProject(input);
   }
 
-  async updateProject(input: Parameters<TaskflowRepository["updateProject"]>[0]) {
+  async updateProject(input: Parameters<IRepositroyFlow["updateProject"]>[0]) {
     return this.store.updateProject(input);
   }
 
@@ -39,33 +39,33 @@ export class MockTaskflowRepository implements TaskflowRepository {
   async updateProjectMemberRole(
     projectId: string,
     memberId: string,
-    memberRole: Parameters<TaskflowRepository["updateProjectMemberRole"]>[2],
+    memberRole: Parameters<IRepositroyFlow["updateProjectMemberRole"]>[2],
   ) {
     return this.store.updateProjectMemberRole(projectId, memberId, memberRole);
   }
 
-  async createBoard(input: Parameters<TaskflowRepository["createBoard"]>[0]) {
+  async createBoard(input: Parameters<IRepositroyFlow["createBoard"]>[0]) {
     return this.store.createBoard(input);
   }
 
-  async createTask(input: Parameters<TaskflowRepository["createTask"]>[0]) {
+  async createTask(input: Parameters<IRepositroyFlow["createTask"]>[0]) {
     return this.store.createTask(input);
   }
 
-  async updateTask(input: Parameters<TaskflowRepository["updateTask"]>[0]) {
+  async updateTask(input: Parameters<IRepositroyFlow["updateTask"]>[0]) {
     return this.store.updateTask(input);
   }
 
-  async cloneTask(input: Parameters<TaskflowRepository["cloneTask"]>[0]) {
+  async cloneTask(input: Parameters<IRepositroyFlow["cloneTask"]>[0]) {
     return this.store.cloneTask(input);
   }
 
-  async moveTask(input: Parameters<TaskflowRepository["moveTask"]>[0]) {
+  async moveTask(input: Parameters<IRepositroyFlow["moveTask"]>[0]) {
     return this.store.moveTask(input);
   }
 
   async createNotifications(
-    input: Parameters<TaskflowRepository["createNotifications"]>[0],
+    input: Parameters<IRepositroyFlow["createNotifications"]>[0],
   ) {
     return this.store.createNotifications(input);
   }
@@ -82,23 +82,23 @@ export class MockTaskflowRepository implements TaskflowRepository {
     return this.store.clearNotifications(recipientId);
   }
 
-  async updateSettings(input: Parameters<TaskflowRepository["updateSettings"]>[0]) {
+  async updateSettings(input: Parameters<IRepositroyFlow["updateSettings"]>[0]) {
     return this.store.updateSettings(input);
   }
 
   async updateUserThemePreference(
     userId: string,
-    mode: Parameters<TaskflowRepository["updateUserThemePreference"]>[1],
+    mode: Parameters<IRepositroyFlow["updateUserThemePreference"]>[1],
   ) {
     return this.store.updateUserThemePreference(userId, mode);
   }
 
-  async createInvitation(input: Parameters<TaskflowRepository["createInvitation"]>[0]) {
+  async createInvitation(input: Parameters<IRepositroyFlow["createInvitation"]>[0]) {
     return this.store.createInvitation(input);
   }
 
   async updateInvitationStatus(
-    input: Parameters<TaskflowRepository["updateInvitationStatus"]>[0],
+    input: Parameters<IRepositroyFlow["updateInvitationStatus"]>[0],
   ) {
     return this.store.updateInvitationStatus(input);
   }

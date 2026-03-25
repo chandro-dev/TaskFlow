@@ -3,14 +3,14 @@ import type {
   CreateProjectNotificationInput,
   ProjectNotificationEvent,
 } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { createNotificationComposer } from "@/lib/patterns/factory/notification-composer-factory";
 import type { ProjectEventSubscriber } from "@/lib/patterns/observer/project-event-publisher";
 
 export class ProjectNotificationSubscriber implements ProjectEventSubscriber {
   private readonly snapshotLoader: SnapshotLoader;
 
-  constructor(private readonly repository: TaskflowRepository) {
+  constructor(private readonly repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
 

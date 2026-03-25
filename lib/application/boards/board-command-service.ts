@@ -1,10 +1,10 @@
 import type { CreateBoardInput } from "@/lib/domain/models";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import type { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
 
 export class BoardCommandService {
   constructor(
-    private readonly repository: TaskflowRepository,
+    private readonly repository: IRepositroyFlow,
     private readonly notificationPublisher: ProjectEventPublisher,
   ) {}
 

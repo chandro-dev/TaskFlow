@@ -16,10 +16,10 @@ import { TaskCloneService } from "@/lib/application/tasks/task-clone-service";
 import { TaskMoveService } from "@/lib/application/tasks/task-move-service";
 import { TaskUpdateService } from "@/lib/application/tasks/task-update-service";
 import { WorkspaceQueryService } from "@/lib/application/workspace/workspace-query-service";
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
 
-export function createApplicationServices(repository: TaskflowRepository) {
+export function createApplicationServices(repository: IRepositroyFlow) {
   // Commands publish domain events through a single publisher so notifications
   // stay decoupled from project, board and task use cases.
   const notificationPublisher = new ProjectEventPublisher([

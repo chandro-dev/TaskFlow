@@ -19,7 +19,7 @@ legend right
 endlegend
 
 package "Domain" {
-  interface TaskflowRepository <<interface>>
+  interface IRepositroyFlow <<interface>>
   interface TaskflowAuthProvider <<interface>>
 
   class ProjectAccessPolicy
@@ -170,8 +170,8 @@ TaskflowSnapshot *-- ProjectNotification
 UnauthorizedRouteError --|> HttpError
 
 ' Repository/auth contracts
-MockTaskflowRepository ..|> TaskflowRepository
-SupabaseTaskflowRepository ..|> TaskflowRepository
+MockTaskflowRepository ..|> IRepositroyFlow
+SupabaseTaskflowRepository ..|> IRepositroyFlow
 MockAuthProvider ..|> TaskflowAuthProvider
 SupabaseAuthProvider ..|> TaskflowAuthProvider
 
@@ -247,49 +247,49 @@ TaskflowService o--> NotificationCommandService
 TaskflowService o--> SettingsCommandService
 TaskflowService o--> ThemePreferenceCommandService
 
-SnapshotLoader ..> TaskflowRepository
-AuthQueryService ..> TaskflowRepository
-AuthCommandService ..> TaskflowRepository
+SnapshotLoader ..> IRepositroyFlow
+AuthQueryService ..> IRepositroyFlow
+AuthCommandService ..> IRepositroyFlow
 SessionCommandService ..> TaskflowAuthProvider
 WorkspaceQueryService ..> SnapshotLoader
 ProjectQueryService ..> SnapshotLoader
-InvitationQueryService ..> TaskflowRepository
+InvitationQueryService ..> IRepositroyFlow
 NotificationQueryService ..> SnapshotLoader
-SettingsCommandService ..> TaskflowRepository
-ThemePreferenceCommandService ..> TaskflowRepository
-NotificationCommandService ..> TaskflowRepository
+SettingsCommandService ..> IRepositroyFlow
+ThemePreferenceCommandService ..> IRepositroyFlow
+NotificationCommandService ..> IRepositroyFlow
 InvitationCreationGuard ..> TaskflowSnapshot
-TaskCloneService ..> TaskflowRepository
+TaskCloneService ..> IRepositroyFlow
 TaskCloneService ..> TaskPrototype
 TaskCloneService ..> SubtaskPrototype
-TaskUpdateService ..> TaskflowRepository
+TaskUpdateService ..> IRepositroyFlow
 TaskUpdateService ..> TaskUpdateBuilder
 
-ProjectCommandService ..> TaskflowRepository
+ProjectCommandService ..> IRepositroyFlow
 ProjectCommandService ..> ProjectEventPublisher
 ProjectCommandService ..> ProjectBuilder
 ProjectCommandService ..> BoardFactory
 ProjectCommandService ..> ProjectAccessPolicy
 
-BoardCommandService ..> TaskflowRepository
+BoardCommandService ..> IRepositroyFlow
 BoardCommandService ..> ProjectEventPublisher
 BoardCommandService ..> BoardFactory
 
-TaskCommandService ..> TaskflowRepository
+TaskCommandService ..> IRepositroyFlow
 TaskCommandService ..> ProjectEventPublisher
 TaskCommandService ..> TaskFactory
 TaskCommandService ..> TaskBuilder
 
-TaskMoveService ..> TaskflowRepository
+TaskMoveService ..> IRepositroyFlow
 
-InvitationCommandService ..> TaskflowRepository
+InvitationCommandService ..> IRepositroyFlow
 InvitationCommandService ..> ProjectEventPublisher
 InvitationCommandService ..> InvitationCreationGuard
 InvitationCommandService ..> InvitationFactory
 InvitationCommandService ..> MemberInvitationBuilder
 InvitationCommandService ..> InvitationPrototype
 
-ProjectNotificationSubscriber ..> TaskflowRepository
+ProjectNotificationSubscriber ..> IRepositroyFlow
 ProjectNotificationSubscriber ..> ProjectNotificationBuilder
 
 ' Infrastructure wiring
@@ -337,7 +337,7 @@ Mantiene la preferencia elegida y
 el modo efectivo resuelto contra el sistema.
 end note
 
-note bottom of TaskflowRepository
+note bottom of IRepositroyFlow
 Puerto principal de infraestructura.
 Mock y Supabase implementan este contrato.
 end note

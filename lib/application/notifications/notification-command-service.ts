@@ -1,7 +1,7 @@
-import type { TaskflowRepository } from "@/lib/domain/repositories";
+import type { IRepositroyFlow } from "@/lib/domain/repositories";
 
 export class NotificationCommandService {
-  constructor(private readonly repository: TaskflowRepository) {}
+  constructor(private readonly repository: IRepositroyFlow) {}
 
   async markNotificationRead(notificationId: string, recipientId: string) {
     return this.repository.markNotificationRead(notificationId, recipientId);

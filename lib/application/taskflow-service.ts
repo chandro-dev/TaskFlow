@@ -4,6 +4,7 @@ import type {
   CreateInvitationInput,
   CreateProjectInput,
   CreateTaskInput,
+  DeleteTaskInput,
   MoveTaskInput,
   TaskFilters,
   ThemeMode,
@@ -82,6 +83,10 @@ export class TaskflowService {
 
   async updateTask(input: UpdateTaskInput) {
     return this.services.taskUpdates.updateTask(input);
+  }
+
+  async deleteTask(input: DeleteTaskInput) {
+    return this.services.taskDeletes.deleteTask(input);
   }
 
   async moveTask(input: MoveTaskInput) {

@@ -191,6 +191,13 @@ export function TaskCloneModal({
                     >
                       Usar todas
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => updateField("subtaskIds", [])}
+                      className="rounded-2xl border border-[color:var(--color-border)] px-3 py-2 text-xs font-medium text-[color:var(--color-text-secondary)]"
+                    >
+                      Quitar todas
+                    </button>
                   </div>
 
                   {task.subtasks.length > 0 ? (

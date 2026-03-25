@@ -93,6 +93,37 @@ export class SupabaseTaskCommand {
     return new TaskBuilder(updatedTask).withHistory(historyEntry).build();
   }
 
+  async deleteTask(input: {
+    taskId: string;
+    projectId: string;
+    boardId: string;
+  }): Promise<void> {
+    // Clearing clone ancestry first avoids FK violations when the source task
+    // already has copies linked through cloned_from_task_id.
+    const { error: unlinkError } = await this.client
+      .from("tasks")
+      .update({ cloned_from_task_id: null })
+      .eq("cloned_from_task_id", input.taskId)
+      .eq("project_id", input.projectId);
+
+    if (unlinkError) {
+      throw new Error(
+        unlinkError.message ?? "No fue posible preparar la eliminacion de la tarea.",
+      );
+    }
+
+    const { error } = await this.client
+      .from("tasks")
+      .delete()
+      .eq("id", input.taskId)
+      .eq("project_id", input.projectId)
+      .eq("board_id", input.boardId);
+
+    if (error) {
+      throw new Error(error.message ?? "No fue posible eliminar la tarea.");
+    }
+  }
+
   async moveTask(input: MoveTaskInput): Promise<Task> {
     const { data, error } = await this.client.rpc("move_project_task", {
       target_task_id: input.taskId,

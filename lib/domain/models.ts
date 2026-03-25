@@ -245,6 +245,13 @@ export interface UpdateTaskInput {
   subtasks: TaskSubtaskInput[];
 }
 
+export interface DeleteTaskInput {
+  taskId: string;
+  projectId: string;
+  boardId: string;
+  actorId: string;
+}
+
 export interface CloneTaskRequestInput {
   sourceTaskId: string;
   projectId: string;

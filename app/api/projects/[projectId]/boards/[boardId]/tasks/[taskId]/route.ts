@@ -47,3 +47,26 @@ export async function PATCH(
     return buildRouteErrorResponse(error);
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  context: RouteContext<
+    "/api/projects/[projectId]/boards/[boardId]/tasks/[taskId]"
+  >,
+) {
+  const { projectId, boardId, taskId } = await context.params;
+
+  try {
+    const currentUser = await requireProjectMemberRouteUser(projectId);
+    await service.deleteTask({
+      taskId,
+      projectId,
+      boardId,
+      actorId: currentUser.id,
+    });
+
+    return Response.json({ ok: true });
+  } catch (error) {
+    return buildRouteErrorResponse(error);
+  }
+}

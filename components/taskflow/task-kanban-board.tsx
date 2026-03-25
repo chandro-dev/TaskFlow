@@ -4,6 +4,7 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TaskCard } from "@/components/taskflow/task-card";
 import { TaskCloneModal } from "@/components/taskflow/task-clone-modal";
+import { TaskDeleteButton } from "@/components/taskflow/task-delete-button";
 import { TaskEditorModal } from "@/components/taskflow/task-editor-modal";
 import type { BoardColumnView, UserProfile } from "@/lib/domain/models";
 
@@ -229,6 +230,11 @@ export function TaskKanbanBoard({
                                 boardId={boardId}
                                 columns={columns}
                                 users={users}
+                              />
+                              <TaskDeleteButton
+                                taskId={task.id}
+                                projectId={projectId}
+                                boardId={boardId}
                               />
                             </div>
                           }

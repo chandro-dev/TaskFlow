@@ -369,6 +369,22 @@ export class MockTaskflowStore {
     return structuredClone(updatedTask);
   }
 
+  deleteTask(input: { taskId: string; projectId: string; boardId: string }) {
+    const task = this.snapshot.tasks.find((item) => item.id === input.taskId);
+
+    if (!task || task.projectId !== input.projectId || task.boardId !== input.boardId) {
+      throw new Error("La tarea no existe dentro del tablero actual.");
+    }
+
+    this.snapshot.tasks = this.snapshot.tasks
+      .filter((item) => item.id !== input.taskId)
+      .map((item) =>
+        item.clonedFromTaskId === input.taskId
+          ? { ...item, clonedFromTaskId: undefined }
+          : item,
+      );
+  }
+
   cloneTask(input: CloneTaskInput): Task {
     const sourceTask = this.snapshot.tasks.find((item) => item.id === input.sourceTaskId);
     const board = this.snapshot.boards.find((item) => item.id === input.boardId);

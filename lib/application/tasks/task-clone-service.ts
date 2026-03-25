@@ -67,10 +67,13 @@ export class TaskCloneService {
     sourceSubtasks: Subtask[],
     input: CloneTaskRequestInput,
   ) {
+    // When the UI sends an empty array it means "clone without subtasks".
+    // Only an undefined selection falls back to the full source checklist.
     const selectedSubtaskIds = new Set(
-      (input.subtaskIds?.length
-        ? input.subtaskIds
-        : sourceSubtasks.map((item) => item.id)
+      (
+        input.subtaskIds === undefined
+          ? sourceSubtasks.map((item) => item.id)
+          : input.subtaskIds
       ).filter(Boolean),
     );
 

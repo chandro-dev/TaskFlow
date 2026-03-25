@@ -103,6 +103,11 @@ export class SupabaseTaskflowRepository implements IRepositroyFlow {
     return new SupabaseTaskCommand(client).updateTask(input);
   }
 
+  async deleteTask(input: Parameters<IRepositroyFlow["deleteTask"]>[0]) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseTaskCommand(client).deleteTask(input);
+  }
+
   async cloneTask(input: Parameters<IRepositroyFlow["cloneTask"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseTaskCommand(client).cloneTask(input);

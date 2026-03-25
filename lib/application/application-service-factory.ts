@@ -12,6 +12,7 @@ import { ProjectQueryService } from "@/lib/application/projects/project-query-se
 import { SettingsCommandService } from "@/lib/application/settings/settings-command-service";
 import { ThemePreferenceCommandService } from "@/lib/application/settings/theme-preference-command-service";
 import { TaskCommandService } from "@/lib/application/tasks/task-command-service";
+import { TaskDeleteService } from "@/lib/application/tasks/task-delete-service";
 import { TaskCloneService } from "@/lib/application/tasks/task-clone-service";
 import { TaskMoveService } from "@/lib/application/tasks/task-move-service";
 import { TaskUpdateService } from "@/lib/application/tasks/task-update-service";
@@ -40,6 +41,7 @@ export function createApplicationServices(repository: IRepositroyFlow) {
     settingsCommands: new SettingsCommandService(repository),
     themePreferenceCommands: new ThemePreferenceCommandService(repository),
     taskCommands: new TaskCommandService(repository, notificationPublisher),
+    taskDeletes: new TaskDeleteService(repository),
     taskClones: new TaskCloneService(repository),
     taskMoves: new TaskMoveService(repository),
     taskUpdates: new TaskUpdateService(repository),

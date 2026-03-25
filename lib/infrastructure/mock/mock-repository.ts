@@ -56,6 +56,10 @@ export class MockTaskflowRepository implements IRepositroyFlow {
     return this.store.updateTask(input);
   }
 
+  async deleteTask(input: Parameters<IRepositroyFlow["deleteTask"]>[0]) {
+    return this.store.deleteTask(input);
+  }
+
   async cloneTask(input: Parameters<IRepositroyFlow["cloneTask"]>[0]) {
     return this.store.cloneTask(input);
   }

@@ -41,6 +41,7 @@ export interface IRepositroyFlow {
   createBoard(input: CreateBoardInput): Promise<Board>;
   createTask(input: CreateTaskInput): Promise<Task>;
   updateTask(input: UpdateTaskInput): Promise<Task>;
+  deleteTask(input: { taskId: string; projectId: string; boardId: string }): Promise<void>;
   cloneTask(input: CloneTaskInput): Promise<Task>;
   moveTask(input: MoveTaskInput): Promise<Task>;
   createNotifications(

@@ -26,7 +26,7 @@ export async function POST(
 
   try {
     const currentUser = await requireProjectMemberRouteUser(projectId);
-    const source = await service.getBoardPageData(projectId, boardId, {});
+    const source = await service.getBoardPageData(projectId, boardId, {}, currentUser);
     const sourceTask = source?.columns.flatMap((column) => column.tasks).find((task) => task.id === taskId);
 
     if (!sourceTask) {

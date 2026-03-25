@@ -28,7 +28,7 @@ export function mapAuthUserToProfile(user: User): UserProfile {
     avatar: fullName.slice(0, 2).toUpperCase(),
     bio: "",
     lastAccess: new Date().toISOString(),
-    themePreference: "light",
+    themePreference: "system",
     isActive: true,
   };
 }

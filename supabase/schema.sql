@@ -4,7 +4,7 @@ create type public.user_role as enum ('ADMIN', 'PROJECT_MANAGER', 'DEVELOPER');
 create type public.project_state as enum ('PLANIFICADO', 'EN_PROGRESO', 'PAUSADO', 'COMPLETADO', 'ARCHIVADO');
 create type public.task_priority as enum ('BAJA', 'MEDIA', 'ALTA', 'URGENTE');
 create type public.task_type as enum ('BUG', 'FEATURE', 'TASK', 'IMPROVEMENT');
-create type public.theme_mode as enum ('light', 'dark');
+create type public.theme_mode as enum ('light', 'dark', 'system');
 create type public.notification_kind as enum ('PROJECT_CREATED', 'PROJECT_UPDATED', 'BOARD_CREATED', 'TASK_CREATED', 'MEMBER_INVITED', 'MEMBER_JOINED');
 
 create table if not exists public.profiles (
@@ -14,7 +14,7 @@ create table if not exists public.profiles (
   role public.user_role not null default 'DEVELOPER',
   avatar_initials text,
   bio text default '',
-  theme_preference public.theme_mode not null default 'light',
+  theme_preference public.theme_mode not null default 'system',
   last_access_at timestamptz,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -26,7 +26,7 @@ create table if not exists public.system_settings (
   platform_name text not null default 'Taskflow',
   max_attachment_mb integer not null default 10,
   password_policy text not null default 'Mínimo 10 caracteres, mayúscula, número y símbolo.',
-  default_theme public.theme_mode not null default 'light',
+  default_theme public.theme_mode not null default 'system',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

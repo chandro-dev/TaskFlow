@@ -1,6 +1,6 @@
 export type UserRole = "ADMIN" | "PROJECT_MANAGER" | "DEVELOPER";
 
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "system";
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 export type InvitationChannel = "IN_APP";
 export type NotificationKind =
@@ -126,6 +126,13 @@ export interface Project {
   memberIds: string[];
   ownerId: string;
   boardIds: string[];
+}
+
+export interface ProjectMember {
+  projectId: string;
+  userId: string;
+  memberRole: UserRole;
+  invitedBy?: string;
 }
 
 export interface SystemSettings {
@@ -329,6 +336,7 @@ export interface TaskflowSnapshot {
   users: UserProfile[];
   settings: SystemSettings;
   projects: Project[];
+  projectMembers: ProjectMember[];
   boards: Board[];
   tasks: Task[];
   invitations: MemberInvitation[];
@@ -352,6 +360,13 @@ export interface ProjectCardView {
   canManage: boolean;
 }
 
+export interface ProjectMemberView {
+  user: UserProfile;
+  memberRole: UserRole;
+  isOwner: boolean;
+  isGlobalAdmin: boolean;
+}
+
 export interface BoardTaskView extends Task {
   assignees: UserProfile[];
   isOverdue: boolean;
@@ -369,6 +384,7 @@ export interface BoardPageView {
   columns: BoardColumnView[];
   currentUser: UserProfile;
   users: UserProfile[];
+  projectMembers: ProjectMemberView[];
   availableLabels: Label[];
   filters: TaskFilters;
 }

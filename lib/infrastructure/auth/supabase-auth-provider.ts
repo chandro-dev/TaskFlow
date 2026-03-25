@@ -15,7 +15,7 @@ export class SupabaseAuthProvider implements TaskflowAuthProvider {
   async authenticateWithPassword(input: PasswordAuthInput) {
     const client = getSupabaseAuthClientOrThrow();
     const email = input.email.trim().toLowerCase();
-    const password = input.password.trim();
+    const password = input.password;
 
     if (!email || !password) {
       throw new HttpError("Correo y contrasena son obligatorios.", 422);
@@ -59,6 +59,8 @@ export class SupabaseAuthProvider implements TaskflowAuthProvider {
   private async resolveAuthenticatedUser(
     authUser: Parameters<typeof mapAuthUserToProfile>[0],
   ) {
+    const fallbackProfile = mapAuthUserToProfile(authUser);
+
     try {
       const repositoryUser = await this.repository.findUserById(authUser.id);
 
@@ -66,15 +68,19 @@ export class SupabaseAuthProvider implements TaskflowAuthProvider {
         return repositoryUser;
       }
     } catch {
-      if (hasSupabaseServiceRoleKey()) {
-        return ensureProfileForAuthUser(authUser);
-      }
+      // If the profile query fails we still keep the authenticated session
+      // alive. The app can recover with a minimal profile while the admin sync
+      // path tries to recreate public.profiles out of band.
     }
 
     if (hasSupabaseServiceRoleKey()) {
-      return ensureProfileForAuthUser(authUser);
+      try {
+        return await ensureProfileForAuthUser(authUser);
+      } catch {
+        return fallbackProfile;
+      }
     }
 
-    return mapAuthUserToProfile(authUser);
+    return fallbackProfile;
   }
 }

@@ -41,4 +41,16 @@ export class ProjectCommandService {
   async deleteProject(projectId: string) {
     await this.repository.deleteProject(projectId);
   }
+
+  async removeProjectMember(projectId: string, memberId: string) {
+    return this.repository.removeProjectMember(projectId, memberId);
+  }
+
+  async updateProjectMemberRole(
+    projectId: string,
+    memberId: string,
+    memberRole: "PROJECT_MANAGER" | "DEVELOPER",
+  ) {
+    return this.repository.updateProjectMemberRole(projectId, memberId, memberRole);
+  }
 }

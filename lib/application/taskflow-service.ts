@@ -56,6 +56,22 @@ export class TaskflowService {
     return this.services.projectCommands.deleteProject(projectId);
   }
 
+  async removeProjectMember(projectId: string, memberId: string) {
+    return this.services.projectCommands.removeProjectMember(projectId, memberId);
+  }
+
+  async updateProjectMemberRole(
+    projectId: string,
+    memberId: string,
+    memberRole: "PROJECT_MANAGER" | "DEVELOPER",
+  ) {
+    return this.services.projectCommands.updateProjectMemberRole(
+      projectId,
+      memberId,
+      memberRole,
+    );
+  }
+
   async createBoard(input: CreateBoardInput, actorId: string) {
     return this.services.boardCommands.createBoard(input, actorId);
   }
@@ -83,8 +99,18 @@ export class TaskflowService {
     return this.services.projectQueries.getProjectsPageData(search, currentUser);
   }
 
-  async getBoardPageData(projectId: string, boardId: string, filters: TaskFilters) {
-    return this.services.projectQueries.getBoardPageData(projectId, boardId, filters);
+  async getBoardPageData(
+    projectId: string,
+    boardId: string,
+    filters: TaskFilters,
+    currentUser?: UserProfile,
+  ) {
+    return this.services.projectQueries.getBoardPageData(
+      projectId,
+      boardId,
+      filters,
+      currentUser,
+    );
   }
 
   async getSettingsPageData() {

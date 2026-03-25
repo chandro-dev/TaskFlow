@@ -32,6 +32,12 @@ export interface TaskflowRepository {
   createProject(input: CreateProjectInput): Promise<CreateProjectResult>;
   updateProject(input: UpdateProjectInput): Promise<Project>;
   deleteProject(projectId: string): Promise<void>;
+  removeProjectMember(projectId: string, memberId: string): Promise<Project>;
+  updateProjectMemberRole(
+    projectId: string,
+    memberId: string,
+    memberRole: UserProfile["role"],
+  ): Promise<Project>;
   createBoard(input: CreateBoardInput): Promise<Board>;
   createTask(input: CreateTaskInput): Promise<Task>;
   updateTask(input: UpdateTaskInput): Promise<Task>;

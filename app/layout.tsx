@@ -20,22 +20,51 @@ export const metadata: Metadata = {
     "Plataforma de gestion de tareas con proyectos, tableros Kanban, autenticacion y configuracion administrativa.",
 };
 
+function buildThemeBootstrapScript() {
+  const lightTheme = JSON.stringify(createThemeArtifacts("light").cssVariables);
+  const darkTheme = JSON.stringify(createThemeArtifacts("dark").cssVariables);
+
+  return `
+    (function () {
+      var storageKey = "taskflow-theme";
+      var stored = window.localStorage.getItem(storageKey);
+      var preference = stored === "light" || stored === "dark" || stored === "system"
+        ? stored
+        : "system";
+      var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var resolved = preference === "system"
+        ? (prefersDark ? "dark" : "light")
+        : preference;
+      var themes = { light: ${lightTheme}, dark: ${darkTheme} };
+      var root = document.documentElement;
+      root.dataset.theme = resolved;
+      root.dataset.themePreference = preference;
+      var variables = themes[resolved] || themes.light;
+      Object.keys(variables).forEach(function (key) {
+        root.style.setProperty(key, variables[key]);
+      });
+    })();
+  `;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Abstract Factory traceability: the server shell asks for the light theme
-  // family once so the first render already ships with a consistent token set.
   const initialTheme = createThemeArtifacts("light");
 
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${bodyFont.variable} ${displayFont.variable}`}
       style={initialTheme.cssVariables as CSSProperties}
     >
-      <body>{children}</body>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: buildThemeBootstrapScript() }} />
+        {children}
+      </body>
     </html>
   );
 }

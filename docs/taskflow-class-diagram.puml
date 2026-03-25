@@ -1,0 +1,345 @@
+@startuml
+title Taskflow - Diagrama de clases y contratos principales
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam wrapWidth 220
+skinparam maxMessageSize 180
+
+hide empty members
+
+legend right
+  Este diagrama muestra las clases, interfaces y abstract classes
+  que estructuran la arquitectura actual.
+
+  No incluye route handlers de Next.js ni componentes React funcionales,
+  porque no son clases UML.
+endlegend
+
+package "Domain" {
+  interface TaskflowRepository <<interface>>
+  interface TaskflowAuthProvider <<interface>>
+
+  class ProjectAccessPolicy
+
+  class UserProfile <<entity>>
+  class Project <<entity>>
+  class Board <<entity>>
+  class BoardColumn <<entity>>
+  class Task <<entity>>
+  class Subtask <<entity>>
+  class MemberInvitation <<entity>>
+  class ProjectNotification <<entity>>
+  class SystemSettings <<entity>>
+  class TaskflowSnapshot <<entity>>
+}
+
+package "Shared" {
+  class HttpError
+  class UnauthorizedRouteError
+}
+
+package "Patterns.Singleton" {
+  class ThemeSingleton
+}
+
+package "Patterns.AbstractFactory" {
+  interface ThemePalette <<interface>>
+  interface ThemeArtifacts <<interface>>
+  interface ThemeFactory <<interface>>
+  class LightThemeFactory
+  class DarkThemeFactory
+}
+
+package "Patterns.Builder" {
+  class UserRegistrationBuilder
+  class ProjectBuilder
+  class TaskBuilder
+  class TaskUpdateBuilder
+  class MemberInvitationBuilder
+  class ProjectNotificationBuilder
+}
+
+package "Patterns.FactoryMethod" {
+  abstract class TaskFactory
+  class BugTaskFactory
+  class FeatureTaskFactory
+  class ImprovementTaskFactory
+  class StandardTaskFactory
+
+  abstract class BoardFactory
+  class DefaultKanbanBoardFactory
+
+  abstract class UserProfileFactory
+  class DeveloperProfileFactory
+
+  abstract class InvitationFactory
+  class InAppInvitationFactory
+
+  interface NotificationComposer <<interface>>
+  abstract class BaseNotificationComposer
+  class ProjectCreatedNotificationComposer
+  class ProjectUpdatedNotificationComposer
+  class BoardCreatedNotificationComposer
+  class TaskCreatedNotificationComposer
+  class MemberInvitedNotificationComposer
+  class MemberJoinedNotificationComposer
+}
+
+package "Patterns.Prototype" {
+  class TaskPrototype
+  class SubtaskPrototype
+  class ProjectPrototype
+  class InvitationPrototype
+}
+
+package "Patterns.Observer" {
+  interface ProjectEventSubscriber <<interface>>
+  class ProjectEventPublisher
+}
+
+package "Application" {
+  class TaskflowService
+  class SnapshotLoader
+
+  class AuthQueryService
+  class AuthCommandService
+  class SessionCommandService
+
+  class WorkspaceQueryService
+  class ProjectQueryService
+  class ProjectCommandService
+  class BoardCommandService
+
+  class TaskCommandService
+  class TaskUpdateService
+  class TaskMoveService
+  class TaskCloneService
+
+  class InvitationQueryService
+  class InvitationCommandService
+  class InvitationCreationGuard
+
+  class NotificationQueryService
+  class NotificationCommandService
+  class ProjectNotificationSubscriber
+
+  class SettingsCommandService
+  class ThemePreferenceCommandService
+}
+
+package "Infrastructure.Mock" {
+  class MockTaskflowRepository
+  class MockTaskflowStore
+  class MockAuthProvider
+}
+
+package "Infrastructure.Supabase" {
+  class SupabaseTaskflowRepository
+  class SupabaseSnapshotQuery
+  class SupabaseAuthCommand
+  class SupabaseProjectCommand
+  class SupabaseBoardCommand
+  class SupabaseTaskCommand
+  class SupabaseInvitationCommand
+  class SupabaseNotificationCommand
+  class SupabaseSettingsCommand
+  class SupabaseAuthProvider
+}
+
+' Domain model relations
+Project "1" *-- "*" Board
+Board "1" *-- "*" BoardColumn
+Project "1" *-- "*" Task
+Task "1" *-- "*" Subtask
+Project "1" *-- "*" MemberInvitation
+Project "1" *-- "*" ProjectNotification
+UserProfile "1" -- "*" Project : owner/member >
+UserProfile "1" -- "*" Task : assignee >
+TaskflowSnapshot *-- UserProfile
+TaskflowSnapshot *-- SystemSettings
+TaskflowSnapshot *-- Project
+TaskflowSnapshot *-- Board
+TaskflowSnapshot *-- Task
+TaskflowSnapshot *-- MemberInvitation
+TaskflowSnapshot *-- ProjectNotification
+
+' Shared
+UnauthorizedRouteError --|> HttpError
+
+' Repository/auth contracts
+MockTaskflowRepository ..|> TaskflowRepository
+SupabaseTaskflowRepository ..|> TaskflowRepository
+MockAuthProvider ..|> TaskflowAuthProvider
+SupabaseAuthProvider ..|> TaskflowAuthProvider
+
+' Singleton / Abstract Factory
+ThemeSingleton ..> ThemeFactory : uses
+LightThemeFactory ..|> ThemeFactory
+DarkThemeFactory ..|> ThemeFactory
+ThemeFactory ..> ThemePalette
+ThemeSingleton ..> ThemeArtifacts : applies CSS tokens
+
+' Builder usage
+UserRegistrationBuilder ..> UserProfile
+ProjectBuilder ..> Project
+TaskBuilder ..> Task
+TaskUpdateBuilder ..> Task
+MemberInvitationBuilder ..> MemberInvitation
+ProjectNotificationBuilder ..> ProjectNotification
+
+' Factory Method hierarchies
+BugTaskFactory --|> TaskFactory
+FeatureTaskFactory --|> TaskFactory
+ImprovementTaskFactory --|> TaskFactory
+StandardTaskFactory --|> TaskFactory
+TaskFactory ..> Task
+
+DefaultKanbanBoardFactory --|> BoardFactory
+BoardFactory ..> Board
+BoardFactory ..> BoardColumn
+
+DeveloperProfileFactory --|> UserProfileFactory
+UserProfileFactory ..> UserProfile
+
+InAppInvitationFactory --|> InvitationFactory
+InvitationFactory ..> MemberInvitation
+
+BaseNotificationComposer ..|> NotificationComposer
+ProjectCreatedNotificationComposer --|> BaseNotificationComposer
+ProjectUpdatedNotificationComposer --|> BaseNotificationComposer
+BoardCreatedNotificationComposer --|> BaseNotificationComposer
+TaskCreatedNotificationComposer --|> BaseNotificationComposer
+MemberInvitedNotificationComposer --|> BaseNotificationComposer
+MemberJoinedNotificationComposer --|> BaseNotificationComposer
+NotificationComposer ..> ProjectNotification
+NotificationComposer ..> TaskflowSnapshot
+
+' Prototype usage
+TaskPrototype ..> Task
+SubtaskPrototype ..> Subtask
+ProjectPrototype ..> Project
+InvitationPrototype ..> MemberInvitation
+
+' Observer
+ProjectNotificationSubscriber ..|> ProjectEventSubscriber
+ProjectEventPublisher o--> ProjectEventSubscriber
+ProjectNotificationSubscriber ..> NotificationComposer : composes notifications
+
+' Application layer
+TaskflowService o--> AuthQueryService
+TaskflowService o--> AuthCommandService
+TaskflowService o--> SessionCommandService
+TaskflowService o--> WorkspaceQueryService
+TaskflowService o--> ProjectQueryService
+TaskflowService o--> ProjectCommandService
+TaskflowService o--> BoardCommandService
+TaskflowService o--> TaskCommandService
+TaskflowService o--> TaskUpdateService
+TaskflowService o--> TaskMoveService
+TaskflowService o--> TaskCloneService
+TaskflowService o--> InvitationQueryService
+TaskflowService o--> InvitationCommandService
+TaskflowService o--> NotificationQueryService
+TaskflowService o--> NotificationCommandService
+TaskflowService o--> SettingsCommandService
+TaskflowService o--> ThemePreferenceCommandService
+
+SnapshotLoader ..> TaskflowRepository
+AuthQueryService ..> TaskflowRepository
+AuthCommandService ..> TaskflowRepository
+SessionCommandService ..> TaskflowAuthProvider
+WorkspaceQueryService ..> SnapshotLoader
+ProjectQueryService ..> SnapshotLoader
+InvitationQueryService ..> TaskflowRepository
+NotificationQueryService ..> SnapshotLoader
+SettingsCommandService ..> TaskflowRepository
+ThemePreferenceCommandService ..> TaskflowRepository
+NotificationCommandService ..> TaskflowRepository
+InvitationCreationGuard ..> TaskflowSnapshot
+TaskCloneService ..> TaskflowRepository
+TaskCloneService ..> TaskPrototype
+TaskCloneService ..> SubtaskPrototype
+TaskUpdateService ..> TaskflowRepository
+TaskUpdateService ..> TaskUpdateBuilder
+
+ProjectCommandService ..> TaskflowRepository
+ProjectCommandService ..> ProjectEventPublisher
+ProjectCommandService ..> ProjectBuilder
+ProjectCommandService ..> BoardFactory
+ProjectCommandService ..> ProjectAccessPolicy
+
+BoardCommandService ..> TaskflowRepository
+BoardCommandService ..> ProjectEventPublisher
+BoardCommandService ..> BoardFactory
+
+TaskCommandService ..> TaskflowRepository
+TaskCommandService ..> ProjectEventPublisher
+TaskCommandService ..> TaskFactory
+TaskCommandService ..> TaskBuilder
+
+TaskMoveService ..> TaskflowRepository
+
+InvitationCommandService ..> TaskflowRepository
+InvitationCommandService ..> ProjectEventPublisher
+InvitationCommandService ..> InvitationCreationGuard
+InvitationCommandService ..> InvitationFactory
+InvitationCommandService ..> MemberInvitationBuilder
+InvitationCommandService ..> InvitationPrototype
+
+ProjectNotificationSubscriber ..> TaskflowRepository
+ProjectNotificationSubscriber ..> ProjectNotificationBuilder
+
+' Infrastructure wiring
+MockTaskflowRepository o--> MockTaskflowStore
+MockTaskflowStore ..> UserRegistrationBuilder
+MockTaskflowStore ..> ProjectBuilder
+MockTaskflowStore ..> TaskBuilder
+MockTaskflowStore ..> TaskFactory
+MockTaskflowStore ..> InvitationFactory
+MockTaskflowStore ..> MemberInvitationBuilder
+MockTaskflowStore ..> InvitationPrototype
+MockTaskflowStore ..> ProjectPrototype
+MockTaskflowStore ..> TaskPrototype
+
+SupabaseTaskflowRepository o--> SupabaseSnapshotQuery
+SupabaseTaskflowRepository o--> SupabaseAuthCommand
+SupabaseTaskflowRepository o--> SupabaseProjectCommand
+SupabaseTaskflowRepository o--> SupabaseBoardCommand
+SupabaseTaskflowRepository o--> SupabaseTaskCommand
+SupabaseTaskflowRepository o--> SupabaseInvitationCommand
+SupabaseTaskflowRepository o--> SupabaseNotificationCommand
+SupabaseTaskflowRepository o--> SupabaseSettingsCommand
+
+SupabaseAuthCommand ..> UserRegistrationBuilder
+SupabaseAuthCommand ..> UserProfileFactory
+SupabaseProjectCommand ..> ProjectBuilder
+SupabaseProjectCommand ..> BoardFactory
+SupabaseTaskCommand ..> TaskFactory
+SupabaseTaskCommand ..> TaskBuilder
+SupabaseTaskCommand ..> TaskUpdateBuilder
+SupabaseInvitationCommand ..> InvitationFactory
+SupabaseInvitationCommand ..> MemberInvitationBuilder
+SupabaseInvitationCommand ..> InvitationPrototype
+SupabaseNotificationCommand ..> ProjectNotificationBuilder
+
+note bottom of TaskflowService
+Facade principal de la aplicacion.
+Las rutas de Next delegan en esta clase y
+los casos de uso reales siguen separados.
+end note
+
+note bottom of ThemeSingleton
+Singleton global del cliente.
+Mantiene la preferencia elegida y
+el modo efectivo resuelto contra el sistema.
+end note
+
+note bottom of TaskflowRepository
+Puerto principal de infraestructura.
+Mock y Supabase implementan este contrato.
+end note
+
+@enduml

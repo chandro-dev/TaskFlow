@@ -110,6 +110,7 @@ export function SettingsForm({
         onChange={(event) => updateField("defaultTheme", event.target.value as ThemeMode)}
         className="taskflow-input"
       >
+        <option value="system">Sistema</option>
         <option value="light">Light</option>
         <option value="dark">Dark</option>
       </select>

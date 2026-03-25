@@ -1,6 +1,7 @@
 import type {
   Board,
   BoardSummaryView,
+  ProjectMemberView,
   BoardTaskView,
   Label,
   MemberInvitation,
@@ -90,6 +91,30 @@ export function buildProjectCard(
     defaultBoardId: project.boardIds[0] ?? "",
     canManage: projectAccessPolicy.canManage(project, currentUser),
   };
+}
+
+export function buildProjectMembers(
+  project: Project,
+  snapshot: TaskflowSnapshot,
+): ProjectMemberView[] {
+  return snapshot.projectMembers
+    .filter((membership) => membership.projectId === project.id)
+    .map((membership) => {
+      const user = snapshot.users.find((candidate) => candidate.id === membership.userId);
+
+      if (!user) {
+        return null;
+      }
+
+      return {
+        user,
+        memberRole: membership.memberRole,
+        isOwner: project.ownerId === membership.userId,
+        isGlobalAdmin: user.role === "ADMIN",
+      } satisfies ProjectMemberView;
+    })
+    .filter((member): member is ProjectMemberView => Boolean(member))
+    .sort((left, right) => left.user.name.localeCompare(right.user.name, "es"));
 }
 
 export function hydrateBoardTask(

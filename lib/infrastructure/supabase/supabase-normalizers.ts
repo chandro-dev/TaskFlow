@@ -83,7 +83,7 @@ export function normalizeUser(row: ProfileRow): UserProfile {
     avatar: row.avatar_initials ?? row.full_name.slice(0, 2).toUpperCase(),
     bio: row.bio ?? "",
     lastAccess: row.last_access_at,
-    themePreference: row.theme_preference ?? "light",
+    themePreference: row.theme_preference ?? "system",
     isActive: row.is_active ?? true,
   };
 }
@@ -190,6 +190,6 @@ export function normalizeSettings(row: SettingsRow | null): SystemSettings {
     maxAttachmentMb: row?.max_attachment_mb ?? 10,
     passwordPolicy:
       row?.password_policy ?? "Minimo 10 caracteres, mayuscula, numero y simbolo.",
-    defaultTheme: row?.default_theme ?? "light",
+    defaultTheme: row?.default_theme ?? "system",
   };
 }

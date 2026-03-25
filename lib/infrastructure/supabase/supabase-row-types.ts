@@ -52,6 +52,8 @@ export interface ProjectRow {
 export interface ProjectMemberRow {
   project_id: string;
   user_id: string;
+  member_role: UserProfile["role"];
+  invited_by: string | null;
 }
 
 export interface BoardRow {

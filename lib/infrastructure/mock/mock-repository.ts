@@ -32,6 +32,18 @@ export class MockTaskflowRepository implements TaskflowRepository {
     return this.store.deleteProject(projectId);
   }
 
+  async removeProjectMember(projectId: string, memberId: string) {
+    return this.store.removeProjectMember(projectId, memberId);
+  }
+
+  async updateProjectMemberRole(
+    projectId: string,
+    memberId: string,
+    memberRole: Parameters<TaskflowRepository["updateProjectMemberRole"]>[2],
+  ) {
+    return this.store.updateProjectMemberRole(projectId, memberId, memberRole);
+  }
+
   async createBoard(input: Parameters<TaskflowRepository["createBoard"]>[0]) {
     return this.store.createBoard(input);
   }

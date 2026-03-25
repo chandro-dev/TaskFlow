@@ -17,7 +17,7 @@ export default async function WorkspaceLayout({
     <div className="min-h-screen bg-[linear-gradient(180deg,_var(--color-bg-accent),_var(--color-bg))]">
       <WorkspaceHeader
         currentUser={currentUser}
-        defaultTheme={currentUser.themePreference ?? settings.defaultTheme}
+        defaultTheme={currentUser.themePreference || settings.defaultTheme}
         boardHref="/boards"
         notificationCenter={notificationCenter}
       />

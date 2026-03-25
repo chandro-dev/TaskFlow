@@ -20,6 +20,7 @@ import type {
   UpdateInvitationStatusInput,
   UpdateProjectInput,
   UpdateSystemSettingsInput,
+  UserRole,
 } from "@/lib/domain/models";
 import { buildMockSnapshot } from "@/lib/infrastructure/mock/seed-data";
 import { MemberInvitationBuilder } from "@/lib/patterns/builder/member-invitation-builder";
@@ -107,6 +108,12 @@ export class MockTaskflowStore {
     project.memberIds = [input.ownerId];
 
     this.snapshot.projects.unshift(project);
+    this.snapshot.projectMembers.unshift({
+      projectId: project.id,
+      userId: input.ownerId,
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: input.ownerId,
+    });
     this.snapshot.boards.unshift(board);
 
     return {
@@ -171,6 +178,84 @@ export class MockTaskflowStore {
     // Keep the in-memory snapshot coherent after cascading project removal.
     this.snapshot.tasks = this.snapshot.tasks.filter((item) => !taskIds.has(item.id));
     this.snapshot.boards = this.snapshot.boards.filter((item) => !boardIds.has(item.id));
+  }
+
+  removeProjectMember(projectId: string, memberId: string) {
+    const project = this.snapshot.projects.find((item) => item.id === projectId);
+
+    if (!project) {
+      throw new Error("Proyecto no encontrado.");
+    }
+
+    if (project.ownerId === memberId) {
+      throw new Error("No puedes revocar al propietario del proyecto.");
+    }
+
+    const user = this.snapshot.users.find((item) => item.id === memberId);
+
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    if (user.role === "ADMIN") {
+      throw new Error(
+        "Los administradores globales mantienen acceso. Ajusta su rol si necesitas restringirlo.",
+      );
+    }
+
+    if (!project.memberIds.includes(memberId)) {
+      throw new Error("El usuario ya no pertenece a este proyecto.");
+    }
+
+    project.memberIds = project.memberIds.filter((id) => id !== memberId);
+    this.snapshot.projectMembers = this.snapshot.projectMembers.filter(
+      (item) => !(item.projectId === projectId && item.userId === memberId),
+    );
+    this.snapshot.tasks = this.snapshot.tasks.map((task) =>
+      task.projectId === projectId
+        ? {
+            ...task,
+            assigneeIds: task.assigneeIds.filter((id) => id !== memberId),
+          }
+        : task,
+    );
+
+    return structuredClone(project);
+  }
+
+  updateProjectMemberRole(projectId: string, memberId: string, memberRole: UserRole) {
+    const project = this.snapshot.projects.find((item) => item.id === projectId);
+
+    if (!project) {
+      throw new Error("Proyecto no encontrado.");
+    }
+
+    if (project.ownerId === memberId) {
+      throw new Error("El propietario conserva su privilegio principal.");
+    }
+
+    const user = this.snapshot.users.find((item) => item.id === memberId);
+
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    if (user.role === "ADMIN") {
+      throw new Error(
+        "Los administradores globales mantienen acceso. Ajusta su rol global si necesitas restringirlo.",
+      );
+    }
+
+    const membership = this.snapshot.projectMembers.find(
+      (item) => item.projectId === projectId && item.userId === memberId,
+    );
+
+    if (!membership) {
+      throw new Error("El usuario no pertenece actualmente a este proyecto.");
+    }
+
+    membership.memberRole = memberRole === "PROJECT_MANAGER" ? "PROJECT_MANAGER" : "DEVELOPER";
+    return structuredClone(project);
   }
 
   createBoard(input: CreateBoardInput) {
@@ -506,6 +591,12 @@ export class MockTaskflowStore {
 
       if (project && user && !project.memberIds.includes(user.id)) {
         project.memberIds.push(user.id);
+        this.snapshot.projectMembers.push({
+          projectId: project.id,
+          userId: user.id,
+          memberRole: updated.role,
+          invitedBy: updated.invitedBy,
+        });
       }
     }
 

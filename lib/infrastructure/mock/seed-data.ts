@@ -2,6 +2,7 @@ import type {
   Board,
   Label,
   MemberInvitation,
+  ProjectMember,
   ProjectNotification,
   Project,
   SystemSettings,
@@ -107,7 +108,7 @@ const settings: SystemSettings = {
   platformName: "Taskflow",
   maxAttachmentMb: 10,
   passwordPolicy: "Mínimo 10 caracteres, mayúscula, número y símbolo.",
-  defaultTheme: "light",
+  defaultTheme: "system",
 };
 
 const boards: Board[] = [
@@ -459,6 +460,65 @@ function buildInvitations(): MemberInvitation[] {
   return [baseInvitation, resentInvitation, acceptedInvitation];
 }
 
+function buildProjectMembers(): ProjectMember[] {
+  return [
+    {
+      projectId: "project-web",
+      userId: "user-admin",
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: "user-admin",
+    },
+    {
+      projectId: "project-web",
+      userId: "user-pm",
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: "user-admin",
+    },
+    {
+      projectId: "project-web",
+      userId: "user-dev-1",
+      memberRole: "DEVELOPER",
+      invitedBy: "user-pm",
+    },
+    {
+      projectId: "project-web",
+      userId: "user-dev-2",
+      memberRole: "DEVELOPER",
+      invitedBy: "user-pm",
+    },
+    {
+      projectId: "project-mobile",
+      userId: "user-admin",
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: "user-admin",
+    },
+    {
+      projectId: "project-mobile",
+      userId: "user-pm",
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: "user-admin",
+    },
+    {
+      projectId: "project-mobile",
+      userId: "user-dev-1",
+      memberRole: "DEVELOPER",
+      invitedBy: "user-pm",
+    },
+    {
+      projectId: "project-archive",
+      userId: "user-admin",
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: "user-admin",
+    },
+    {
+      projectId: "project-archive",
+      userId: "user-dev-2",
+      memberRole: "DEVELOPER",
+      invitedBy: "user-admin",
+    },
+  ];
+}
+
 function buildNotifications(): ProjectNotification[] {
   return [
     {
@@ -516,6 +576,7 @@ export function buildMockSnapshot(): TaskflowSnapshot {
     users,
     settings,
     projects: buildProjects(),
+    projectMembers: buildProjectMembers(),
     boards,
     tasks: [...mainTasks, archiveTask],
     invitations: buildInvitations(),

@@ -1,9 +1,11 @@
 import type { ThemeMode } from "@/lib/domain/models";
 
+export type ResolvedThemeMode = Exclude<ThemeMode, "system">;
+
 // Pattern traceability: Abstract Factory.
-// The app has one family of visual artifacts per theme mode. The concrete
-// factories decide the palette, while callers only ask for the artifacts that
-// belong to "light" or "dark".
+// The app has one family of visual artifacts per resolved theme mode. The
+// concrete factories decide the palette, while callers only ask for the
+// artifacts that belong to "light" or "dark".
 export interface ThemePalette {
   background: string;
   backgroundAccent: string;
@@ -69,7 +71,15 @@ class DarkThemeFactory implements ThemeFactory {
   }
 }
 
-export function createThemeFactory(mode: ThemeMode): ThemeFactory {
+export function resolveThemeMode(mode: ThemeMode, prefersDark: boolean): ResolvedThemeMode {
+  if (mode === "system") {
+    return prefersDark ? "dark" : "light";
+  }
+
+  return mode;
+}
+
+export function createThemeFactory(mode: ResolvedThemeMode): ThemeFactory {
   return mode === "dark" ? new DarkThemeFactory() : new LightThemeFactory();
 }
 
@@ -91,10 +101,7 @@ function mapPaletteToCssVariables(palette: ThemePalette) {
   } as Record<string, string>;
 }
 
-export function createThemeArtifacts(mode: ThemeMode): ThemeArtifacts {
-  // This is the main Abstract Factory entry point used by the app shell and
-  // the theme singleton. Both consumers ask for the same theme family and
-  // receive the concrete palette plus the CSS variables derived from it.
+export function createThemeArtifacts(mode: ResolvedThemeMode): ThemeArtifacts {
   const palette = createThemeFactory(mode).createPalette();
 
   return {
@@ -103,8 +110,6 @@ export function createThemeArtifacts(mode: ThemeMode): ThemeArtifacts {
   };
 }
 
-export function getThemeVariables(mode: ThemeMode) {
-  // Backward-compatible helper kept as a thin wrapper around the explicit
-  // abstract-factory entry point.
+export function getThemeVariables(mode: ResolvedThemeMode) {
   return createThemeArtifacts(mode).cssVariables;
 }

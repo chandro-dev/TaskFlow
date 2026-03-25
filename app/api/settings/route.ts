@@ -15,7 +15,7 @@ export async function PUT(request: Request) {
 
   try {
     const currentUser = await requireRouteUser();
-    const requestedTheme = body.defaultTheme ?? "light";
+    const requestedTheme = body.defaultTheme ?? "system";
     await service.updateThemePreference(currentUser.id, requestedTheme);
 
     if (currentUser.role !== "ADMIN") {

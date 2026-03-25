@@ -16,7 +16,7 @@ abstract class UserProfileFactory {
       avatar: this.initials(normalizedName),
       bio: this.defaultBio(normalizedName),
       lastAccess: now,
-      themePreference: "light",
+      themePreference: "system",
       isActive: true,
     };
   }

@@ -8,7 +8,7 @@ export const FALLBACK_USER: UserProfile = {
   avatar: "DA",
   bio: "Usuario de respaldo para entornos sin datos iniciales.",
   lastAccess: new Date().toISOString(),
-  themePreference: "light",
+  themePreference: "system",
   isActive: true,
 };
 
@@ -16,5 +16,5 @@ export const FALLBACK_SETTINGS: SystemSettings = {
   platformName: "Taskflow",
   maxAttachmentMb: 10,
   passwordPolicy: "Minimo 10 caracteres, mayuscula, numero y simbolo.",
-  defaultTheme: "light",
+  defaultTheme: "system",
 };

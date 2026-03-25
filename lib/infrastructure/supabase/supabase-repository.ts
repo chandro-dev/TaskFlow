@@ -70,6 +70,24 @@ export class SupabaseTaskflowRepository implements TaskflowRepository {
     return new SupabaseProjectCommand(client).deleteProject(projectId);
   }
 
+  async removeProjectMember(projectId: string, memberId: string) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseProjectCommand(client).removeProjectMember(projectId, memberId);
+  }
+
+  async updateProjectMemberRole(
+    projectId: string,
+    memberId: string,
+    memberRole: Parameters<TaskflowRepository["updateProjectMemberRole"]>[2],
+  ) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseProjectCommand(client).updateProjectMemberRole(
+      projectId,
+      memberId,
+      memberRole,
+    );
+  }
+
   async createBoard(input: Parameters<TaskflowRepository["createBoard"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseBoardCommand(client).createBoard(input);

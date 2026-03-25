@@ -19,6 +19,7 @@ function normalizeSnapshot(snapshot: TaskflowSnapshot): TaskflowSnapshot {
     users,
     settings: snapshot.settings ?? FALLBACK_SETTINGS,
     projects: snapshot.projects ?? [],
+    projectMembers: snapshot.projectMembers ?? [],
     boards: snapshot.boards ?? [],
     tasks: snapshot.tasks ?? [],
     invitations: snapshot.invitations ?? [],

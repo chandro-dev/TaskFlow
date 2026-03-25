@@ -62,7 +62,9 @@ export class SupabaseSnapshotQuery {
       this.client.from("projects").select("*"),
       this.client.from("boards").select("*"),
       this.client.from("board_columns").select("*"),
-      this.client.from("project_members").select("project_id, user_id"),
+      this.client
+        .from("project_members")
+        .select("project_id, user_id, member_role, invited_by"),
       this.client.from("tasks").select("*"),
       this.client.from("labels").select("*"),
       this.client.from("task_labels").select("*"),
@@ -131,6 +133,14 @@ export class SupabaseSnapshotQuery {
           ],
           (boardIdsByProject[row.id] ?? []).map((item) => item.id),
         ),
+      ),
+      projectMembers: ((projectMembersResult.data ?? []) as ProjectMemberRow[]).map(
+        (row) => ({
+          projectId: row.project_id,
+          userId: row.user_id,
+          memberRole: row.member_role,
+          invitedBy: row.invited_by ?? undefined,
+        }),
       ),
       boards,
       tasks: ((tasksResult.data ?? []) as SupabaseTaskRow[]).map((row) =>
@@ -207,7 +217,7 @@ export class SupabaseSnapshotQuery {
       avatar: "SY",
       bio: "Usuario tecnico de respaldo.",
       lastAccess: new Date().toISOString(),
-      themePreference: "light",
+      themePreference: "system",
       isActive: true,
     };
   }

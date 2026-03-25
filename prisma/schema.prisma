@@ -38,6 +38,7 @@ enum TaskType {
 enum ThemeMode {
   light
   dark
+  system
 }
 
 enum InvitationStatus {
@@ -67,7 +68,7 @@ model Profile {
   role            UserRole         @default(DEVELOPER)
   avatarInitials  String?          @map("avatar_initials")
   bio             String           @default("")
-  themePreference ThemeMode        @default(light) @map("theme_preference")
+  themePreference ThemeMode        @default(system) @map("theme_preference")
   lastAccessAt    DateTime?        @map("last_access_at") @db.Timestamptz(6)
   isActive        Boolean          @default(true) @map("is_active")
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -92,7 +93,7 @@ model SystemSettings {
   platformName    String    @default("Taskflow") @map("platform_name")
   maxAttachmentMb Int       @default(10) @map("max_attachment_mb")
   passwordPolicy  String    @default("Minimo 10 caracteres, mayuscula, numero y simbolo.") @map("password_policy")
-  defaultTheme    ThemeMode @default(light) @map("default_theme")
+  defaultTheme    ThemeMode @default(system) @map("default_theme")
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 

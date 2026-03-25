@@ -11,10 +11,6 @@ export function LoginForm({
   usesSupabaseAuth: boolean;
 }) {
   const router = useRouter();
-  const [email, setEmail] = useState(emailHint);
-  const [password, setPassword] = useState(
-    usesSupabaseAuth ? "" : "Taskflow2026*",
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,6 +18,15 @@ export function LoginForm({
     event.preventDefault();
     setError(null);
     setLoading(true);
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+
+    if (!email || !password) {
+      setError("Correo y contrasena son obligatorios.");
+      setLoading(false);
+      return;
+    }
 
     const response = await fetch("/api/auth/login", {
       method: "POST",
@@ -55,10 +60,10 @@ export function LoginForm({
           id="email"
           name="email"
           type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          defaultValue={emailHint}
           className="taskflow-input"
           placeholder="correo@taskflow.dev"
+          autoComplete="email"
           required
         />
       </div>
@@ -79,12 +84,12 @@ export function LoginForm({
           id="password"
           name="password"
           type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          defaultValue={usesSupabaseAuth ? "" : "Taskflow2026*"}
           className="taskflow-input"
           placeholder={
             usesSupabaseAuth ? "Tu contrasena registrada" : "Taskflow2026*"
           }
+          autoComplete="current-password"
           required
         />
       </div>

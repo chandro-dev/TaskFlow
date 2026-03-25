@@ -19,7 +19,7 @@ function buildSessionFallbackUser(userId: string, email: string): UserProfile {
     avatar: name.slice(0, 2).toUpperCase(),
     bio: "",
     lastAccess: new Date().toISOString(),
-    themePreference: "light",
+    themePreference: "system",
     isActive: true,
   };
 }
@@ -48,7 +48,10 @@ export const getAuthenticatedUser = cache(async () => {
     return repositoryUser;
   }
 
-  if (!hasConfiguredSupabaseAuth()) {
+  // Supabase Auth can validate the user before public.profiles is available.
+  // In that case we still reconstruct a minimal user from the signed session
+  // so the workspace can load while the profile is repaired separately.
+  if (session.email) {
     return buildSessionFallbackUser(session.userId, session.email);
   }
 

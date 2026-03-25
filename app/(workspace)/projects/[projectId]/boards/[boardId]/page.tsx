@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { BoardMemberManagerModal } from "@/components/taskflow/board-member-manager-modal";
 import { ProjectBoardSwitcher } from "@/components/taskflow/project-board-switcher";
 import { TaskCreator } from "@/components/taskflow/task-creator";
 import { TaskKanbanBoard } from "@/components/taskflow/task-kanban-board";
 import { TaskflowService } from "@/lib/application/taskflow-service";
+import { requireAuthenticatedUser } from "@/lib/auth/current-user";
 import type { TaskFilters, TaskPriority, TaskType } from "@/lib/domain/models";
 
 const service = new TaskflowService();
@@ -34,6 +36,7 @@ export default async function BoardPage({
   params: Promise<{ projectId: string; boardId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const currentUser = await requireAuthenticatedUser();
   const route = await params;
   const query = await searchParams;
 
@@ -51,6 +54,7 @@ export default async function BoardPage({
     route.projectId,
     route.boardId,
     filters,
+    currentUser,
   );
 
   if (!data) {
@@ -58,6 +62,13 @@ export default async function BoardPage({
   }
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const currentMembership = data.projectMembers.find(
+    (member) => member.user.id === data.currentUser.id,
+  );
+  const canManageMembers =
+    data.currentUser.role === "ADMIN" ||
+    data.project.ownerId === data.currentUser.id ||
+    currentMembership?.memberRole === "PROJECT_MANAGER";
 
   return (
     <div className="space-y-8">
@@ -70,13 +81,27 @@ export default async function BoardPage({
             Tablero Kanban
           </h1>
           <p className="mt-3 max-w-2xl text-lg leading-8 text-[color:var(--color-text-secondary)]">
-            Gestión de columnas, WIP, tipos de tarea, responsables, etiquetas y
+            Gestion de columnas, WIP, tipos de tarea, responsables, etiquetas y
             filtros avanzados sobre el proyecto activo.
           </p>
+          {canManageMembers ? (
+            <p className="mt-3 text-sm font-medium text-[color:var(--color-accent)]">
+              Puedes gestionar miembros, cambiar privilegios del proyecto y revocar
+              acceso desde este tablero.
+            </p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="taskflow-chip">{activeFilterCount} filtros activos</div>
+          {canManageMembers ? (
+            <BoardMemberManagerModal
+              projectId={data.project.id}
+              projectName={data.project.name}
+              projectMembers={data.projectMembers}
+              canManageMembers={canManageMembers}
+            />
+          ) : null}
           <TaskCreator
             projectId={data.project.id}
             boardId={data.board.id}

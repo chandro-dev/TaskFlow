@@ -3,6 +3,7 @@ import type {
   CreateProjectInput,
   CreateProjectResult,
   UpdateProjectInput,
+  UserRole,
 } from "@/lib/domain/models";
 import { getSession } from "@/lib/auth/session-cookie";
 import { hasSupabaseServiceRoleKey } from "@/lib/infrastructure/auth/auth-mode";
@@ -202,6 +203,191 @@ export class SupabaseProjectCommand {
     }
   }
 
+  async removeProjectMember(projectId: string, memberId: string) {
+    const project = await this.findProjectById(projectId);
+
+    if (project.owner_id === memberId) {
+      throw new Error("No puedes revocar al propietario del proyecto.");
+    }
+
+    const { data: profileRow, error: profileError } = await this.client
+      .from("profiles")
+      .select("role")
+      .eq("id", memberId)
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error(
+        profileError.message ?? "No fue posible validar el usuario a revocar.",
+      );
+    }
+
+    if (profileRow?.role === "ADMIN") {
+      throw new Error(
+        "Los administradores globales mantienen acceso. Ajusta su rol si necesitas restringirlo.",
+      );
+    }
+
+    const { data: memberRow, error: memberLookupError } = await this.client
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id", projectId)
+      .eq("user_id", memberId)
+      .maybeSingle();
+
+    if (memberLookupError) {
+      throw new Error(
+        memberLookupError.message ?? "No fue posible consultar al miembro del proyecto.",
+      );
+    }
+
+    if (!memberRow) {
+      throw new Error("El usuario ya no pertenece a este proyecto.");
+    }
+
+    const { error: deleteMemberError } = await this.client
+      .from("project_members")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("user_id", memberId);
+
+    if (deleteMemberError) {
+      throw new Error(
+        deleteMemberError.message ?? "No fue posible revocar el acceso del miembro.",
+      );
+    }
+
+    const { data: assignedTasks, error: assignedTasksError } = await this.client
+      .from("tasks")
+      .select("id, assignee_ids")
+      .eq("project_id", projectId)
+      .contains("assignee_ids", [memberId]);
+
+    if (assignedTasksError) {
+      throw new Error(
+        assignedTasksError.message ??
+          "El acceso fue revocado, pero no fue posible desasignar sus tareas.",
+      );
+    }
+
+    for (const task of assignedTasks ?? []) {
+      const nextAssignees = ((task.assignee_ids as string[] | null) ?? []).filter(
+        (assigneeId) => assigneeId !== memberId,
+      );
+
+      const { error: taskUpdateError } = await this.client
+        .from("tasks")
+        .update({ assignee_ids: nextAssignees })
+        .eq("id", task.id);
+
+      if (taskUpdateError) {
+        throw new Error(
+          taskUpdateError.message ??
+            "El acceso fue revocado, pero no fue posible desasignar sus tareas.",
+        );
+      }
+    }
+
+    const { data: memberRows, error: membersError } = await this.client
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id", projectId);
+
+    if (membersError) {
+      throw new Error(
+        membersError.message ??
+          "No fue posible consultar los miembros del proyecto tras la revocacion.",
+      );
+    }
+
+    const { data: boardRows, error: boardsError } = await this.client
+      .from("boards")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (boardsError) {
+      throw new Error(
+        boardsError.message ??
+          "No fue posible consultar los tableros del proyecto tras la revocacion.",
+      );
+    }
+
+    return normalizeProject(
+      project,
+      [
+        project.owner_id,
+        ...new Set(
+          ((memberRows ?? []) as Array<{ user_id: string }>).map((row) => row.user_id),
+        ),
+      ],
+      ((boardRows ?? []) as Array<{ id: string }>).map((row) => row.id),
+    );
+  }
+
+  async updateProjectMemberRole(
+    projectId: string,
+    memberId: string,
+    memberRole: UserRole,
+  ) {
+    const project = await this.findProjectById(projectId);
+
+    if (project.owner_id === memberId) {
+      throw new Error("El propietario conserva su privilegio principal.");
+    }
+
+    const { data: profileRow, error: profileError } = await this.client
+      .from("profiles")
+      .select("role")
+      .eq("id", memberId)
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error(
+        profileError.message ?? "No fue posible validar el usuario a actualizar.",
+      );
+    }
+
+    if (profileRow?.role === "ADMIN") {
+      throw new Error(
+        "Los administradores globales mantienen acceso. Ajusta su rol global si necesitas restringirlo.",
+      );
+    }
+
+    const { data: memberRow, error: memberLookupError } = await this.client
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id", projectId)
+      .eq("user_id", memberId)
+      .maybeSingle();
+
+    if (memberLookupError) {
+      throw new Error(
+        memberLookupError.message ?? "No fue posible consultar al miembro del proyecto.",
+      );
+    }
+
+    if (!memberRow) {
+      throw new Error("El usuario no pertenece actualmente a este proyecto.");
+    }
+
+    const nextRole: UserRole =
+      memberRole === "PROJECT_MANAGER" ? "PROJECT_MANAGER" : "DEVELOPER";
+
+    const { error: updateError } = await this.client
+      .from("project_members")
+      .update({ member_role: nextRole })
+      .eq("project_id", projectId)
+      .eq("user_id", memberId);
+
+    if (updateError) {
+      throw new Error(
+        updateError.message ?? "No fue posible actualizar el rol del miembro.",
+      );
+    }
+
+    return this.loadProjectAggregate(project);
+  }
+
   private async ensureOwnerProfile(ownerId: string) {
     const { data, error } = await this.client
       .from("profiles")
@@ -242,7 +428,7 @@ export class SupabaseProjectCommand {
       avatar_initials: inferredName.slice(0, 2).toUpperCase(),
       role: "DEVELOPER",
       bio: "",
-      theme_preference: "light",
+      theme_preference: "system",
       is_active: true,
       last_access_at: new Date().toISOString(),
     });
@@ -266,5 +452,42 @@ export class SupabaseProjectCommand {
     }
 
     return data as ProjectRow;
+  }
+
+  private async loadProjectAggregate(project: ProjectRow) {
+    const { data: memberRows, error: membersError } = await this.client
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id", project.id);
+
+    if (membersError) {
+      throw new Error(
+        membersError.message ??
+          "No fue posible consultar los miembros actualizados del proyecto.",
+      );
+    }
+
+    const { data: boardRows, error: boardsError } = await this.client
+      .from("boards")
+      .select("id")
+      .eq("project_id", project.id);
+
+    if (boardsError) {
+      throw new Error(
+        boardsError.message ??
+          "No fue posible consultar los tableros del proyecto actualizado.",
+      );
+    }
+
+    return normalizeProject(
+      project,
+      [
+        project.owner_id,
+        ...new Set(
+          ((memberRows ?? []) as Array<{ user_id: string }>).map((row) => row.user_id),
+        ),
+      ],
+      ((boardRows ?? []) as Array<{ id: string }>).map((row) => row.id),
+    );
   }
 }

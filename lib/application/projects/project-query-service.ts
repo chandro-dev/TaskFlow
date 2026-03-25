@@ -6,6 +6,7 @@ import type {
 import type { TaskflowRepository } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import {
+  buildProjectMembers,
   buildProjectCard,
   collectProjectLabels,
   hydrateBoardTask,
@@ -85,8 +86,10 @@ export class ProjectQueryService {
     projectId: string,
     boardId: string,
     filters: TaskFilters,
+    currentUser?: UserProfile,
   ): Promise<BoardPageView | null> {
     const snapshot = await this.snapshotLoader.load();
+    const activeUser = currentUser ?? snapshot.currentUser;
     const project = snapshot.projects.find((item) => item.id === projectId);
     const board = snapshot.boards.find((item) => item.id === boardId);
 
@@ -111,8 +114,9 @@ export class ProjectQueryService {
             .filter((task) => task.columnId === column.id)
             .map((task) => hydrateBoardTask(task, snapshot)),
         })),
-      currentUser: snapshot.currentUser,
+      currentUser: activeUser,
       users: snapshot.users.filter((user) => project.memberIds.includes(user.id)),
+      projectMembers: buildProjectMembers(project, snapshot),
       availableLabels: collectProjectLabels(snapshot, projectId),
       filters,
     };

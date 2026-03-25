@@ -82,14 +82,6 @@ export default async function LoginPage({
               </div>
             ) : null}
 
-            <div className="mb-6 text-center">
-              <p className="text-sm text-[color:var(--color-text-secondary)]">
-                {usesSupabaseAuth
-                  ? "Usa una cuenta registrada en Supabase Auth y confirma tu correo antes de ingresar."
-                  : `Acceso de demostracion sugerido: ${emailHint}`}
-              </p>
-            </div>
-
             <LoginForm emailHint={emailHint} usesSupabaseAuth={usesSupabaseAuth} />
 
             <p className="mt-6 text-center text-sm text-[color:var(--color-text-secondary)]">

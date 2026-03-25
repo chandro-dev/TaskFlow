@@ -113,12 +113,6 @@ export function LoginForm({
         </div>
       ) : null}
 
-      {usesSupabaseAuth ? (
-        <div className="rounded-2xl bg-[color:var(--color-surface-muted)] px-4 py-3 text-sm text-[color:var(--color-text-secondary)]">
-          Si tu proyecto de Supabase aun exige confirmacion, revisa el correo
-          enviado antes de iniciar sesion.
-        </div>
-      ) : null}
     </form>
   );
 }

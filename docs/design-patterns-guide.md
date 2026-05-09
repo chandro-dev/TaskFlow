@@ -12,6 +12,12 @@ Esta guia explica, punto por punto, como se aplican los patrones de diseno dentr
 | `Factory Method` | Delegar la creacion concreta segun el tipo o contexto | `lib/patterns/factory/*` | Tipos de tarea, tablero por defecto, perfiles, invitaciones, notificaciones |
 | `Prototype` | Clonar objetos existentes aplicando overrides tecnicos | `lib/patterns/prototype/*` | Clonacion de tareas/subtareas, reenvio de invitaciones, plantillas |
 | `Observer` | Desacoplar comandos de notificaciones | `lib/patterns/observer/project-event-publisher.ts` | Eventos de proyecto, tablero, tarea e invitaciones |
+| `Facade` | Exponer una entrada simple hacia varios servicios de aplicacion | `lib/application/taskflow-service.ts` | Rutas API, paginas del workspace y flujos de autenticacion |
+| `Composite` | Tratar tarea y subtareas como una estructura jerarquica para calcular progreso | `lib/domain/models.ts`, `lib/application/shared/workspace-mappers.ts` | Checklist de tareas y avance mostrado en tarjetas Kanban |
+| `Decorator` | Agregar informacion visual y funcional a la tarea sin modificar su identidad | `components/taskflow/task-card.tsx`, `lib/domain/models.ts` | Etiquetas, responsables, vencimiento, horas y progreso en la UI |
+| `Proxy` | Controlar acceso antes de ejecutar casos de uso sensibles | `lib/api/route-authorization.ts`, `lib/auth/current-user.ts` | Endpoints de proyectos, tableros, tareas e invitaciones |
+| `Adapter` | Traducir contratos de dominio hacia servicios externos o infraestructura concreta | `lib/infrastructure/supabase/*`, `lib/application/notifications/project-notification-subscriber.ts` | Persistencia Supabase y composicion de notificaciones |
+| `Bridge` | Separar el origen de datos del formato de salida de reportes | `lib/application/reports/report-query-service.ts`, `lib/patterns/structural/bridge/report-renderer.ts` | Reportes exportables en HTML, CSV y JSON |
 
 ## 1. Abstract Factory
 
@@ -220,6 +226,8 @@ Cuando una tarea, subtarea, proyecto o invitacion nace a partir de otra, es mas 
   - `TaskPrototype`
   - `SubtaskPrototype`
   - `ProjectPrototype`
+  - `BoardPrototype`
+  - `BoardColumnPrototype`
 - `lib/patterns/prototype/invitation-prototype.ts`
   - `InvitationPrototype`
 
@@ -259,6 +267,16 @@ Uso real:
 
 1. `ProjectPrototype` toma un proyecto base.
 2. Se crea una variacion usada como plantilla.
+
+#### Clonacion de proyectos
+
+1. `ProjectCloneService` toma el proyecto origen y resuelve sus tableros.
+2. `ProjectPrototype` crea un nuevo agregado con nombre, fechas y propietario actualizados.
+3. `BoardPrototype` y `BoardColumnPrototype` replican la estructura de tableros y columnas.
+4. La persistencia crea un proyecto limpio, sin tareas, miembros ni invitaciones heredadas.
+
+Uso real:
+- `lib/application/projects/project-clone-service.ts`
 
 ### Por que aqui si aplica el patron
 
@@ -302,6 +320,230 @@ Los comandos del dominio no deben conocer directamente la infraestructura de not
 
 El comando conoce el hecho que ocurrio, pero no a sus consumidores. Eso evita acoplar creacion de proyecto con notificaciones, historial u otros side effects.
 
+## 7. Facade
+
+### Objetivo en la app
+
+Las paginas y rutas API no deberian conocer todos los servicios internos que participan en un caso de uso. Crear proyectos, mover tareas, registrar usuarios, aceptar invitaciones o marcar notificaciones como leidas requiere coordinar servicios de aplicacion, repositorios, autenticacion y eventos. `TaskflowService` funciona como una fachada que ofrece una entrada estable y mas simple.
+
+### Implementacion
+
+- `lib/application/taskflow-service.ts`
+  - `TaskflowService`
+  - `createTaskflowRepository()`
+  - `createApplicationServices(repository)`
+- Servicios internos coordinados:
+  - `ProjectCommandService`
+  - `BoardCommandService`
+  - `TaskCommandService`
+  - `TaskUpdateService`
+  - `TaskMoveService`
+  - `TaskCloneService`
+  - `InvitationCommandService`
+  - `NotificationCommandService`
+  - `WorkspaceQueryService`
+  - `SettingsCommandService`
+
+### Flujo real
+
+1. Una pagina o ruta instancia `new TaskflowService()`.
+2. La fachada selecciona el repositorio activo mediante `createTaskflowRepository()`.
+3. La fachada crea los servicios de aplicacion con `createApplicationServices(...)`.
+4. La ruta llama un metodo simple, por ejemplo `createTask(...)`, `updateProject(...)`, `getBoardPageData(...)` o `acceptInvitation(...)`.
+5. El servicio interno correspondiente ejecuta validaciones, persistencia, eventos y mapeos.
+
+### Beneficio
+
+El codigo de presentacion queda delgado y estable. Si cambia la forma de persistir, notificar o consultar datos, las rutas no tienen que conocer esos detalles. Esto reduce acoplamiento entre Next.js y la capa de aplicacion.
+
+### Limitacion
+
+La fachada no debe crecer hasta convertirse en una clase con logica de negocio. En Taskflow se usa solo como coordinador; las reglas permanecen en servicios especializados.
+
+## 8. Composite
+
+### Objetivo en la app
+
+Una tarea puede contener subtareas. Para la interfaz y los calculos de avance, la tarea completa se trata como una estructura compuesta: el estado de sus hijos afecta el progreso mostrado para el elemento padre.
+
+### Implementacion
+
+- `lib/domain/models.ts`
+  - `Task`
+  - `Subtask`
+  - `TaskSubtaskInput`
+  - `BoardTaskView`
+- `lib/application/shared/workspace-mappers.ts`
+  - `subtaskProgress(task)`
+  - `mapTaskToBoardView(...)`
+- `components/taskflow/task-card.tsx`
+  - muestra cantidad de subtareas y porcentaje de avance.
+
+### Flujo real
+
+1. La tarea se carga con su arreglo `subtasks`.
+2. El mapper calcula cuantas subtareas estan completas.
+3. El resultado se expone como `subtaskProgress`.
+4. `TaskCard` renderiza el avance junto a los datos principales de la tarea.
+
+### Beneficio
+
+La UI no necesita recalcular ni entender la estructura interna de las subtareas. Puede tratar la tarea enriquecida como una unidad de trabajo con progreso unificado.
+
+### Limitacion
+
+El Composite actual es liviano: solo hay dos niveles, tarea y subtareas. Si luego se permiten subtareas anidadas, conviene formalizar una interfaz comun para nodos de trabajo.
+
+## 9. Decorator
+
+### Objetivo en la app
+
+Una tarea conserva su identidad aunque se le agreguen elementos visuales o funcionales como etiquetas, responsables, estado vencido, horas, adjuntos o progreso. Esa informacion decora la tarea para mejorar su lectura en tablero sin cambiar el modelo base.
+
+### Implementacion
+
+- `lib/domain/models.ts`
+  - `Task`
+  - `Label`
+  - `TaskAttachment`
+  - `BoardTaskView`
+- `lib/application/shared/workspace-mappers.ts`
+  - agrega `assignees`, `isOverdue` y `subtaskProgress`.
+- `components/taskflow/task-card.tsx`
+  - representa etiquetas, vencimiento, responsables, horas y progreso.
+
+### Flujo real
+
+1. El repositorio entrega la tarea base con etiquetas, subtareas, adjuntos e historial.
+2. La capa de aplicacion transforma `Task` en `BoardTaskView`.
+3. `BoardTaskView` agrega datos calculados y relaciones listas para pintar.
+4. `TaskCard` usa esos decoradores para mostrar una tarjeta mas expresiva.
+
+### Beneficio
+
+La tarea no necesita mezclar datos persistidos con datos visuales. La decoracion ocurre en la capa de aplicacion y presentacion, manteniendo separado el dominio del detalle grafico del tablero.
+
+### Limitacion
+
+La implementacion usa composicion de datos y componentes React, no clases decoradoras tradicionales. Es una aplicacion pragmatica del patron al estilo de una interfaz moderna.
+
+## 10. Proxy
+
+### Objetivo en la app
+
+Antes de ejecutar operaciones sensibles, el sistema debe comprobar sesion, rol y pertenencia al proyecto. Las funciones de autorizacion actuan como proxy de acceso: se interponen entre la ruta y el caso de uso real.
+
+### Implementacion
+
+- `lib/auth/current-user.ts`
+  - `requireAuthenticatedUser()`
+- `lib/api/require-route-user.ts`
+  - protege rutas API sin usuario valido.
+- `lib/api/route-authorization.ts`
+  - `requireProjectMemberRouteUser(...)`
+  - `requireProjectCoordinatorRouteUser(...)`
+  - `requireProjectManagerRouteUser(...)`
+- Rutas protegidas:
+  - `app/api/projects/[projectId]/...`
+  - `app/api/projects/[projectId]/boards/...`
+  - `app/api/projects/[projectId]/invitations/route.ts`
+
+### Flujo real
+
+1. La ruta recibe una peticion.
+2. Antes de llamar a `TaskflowService`, invoca una funcion `require...`.
+3. El proxy valida usuario, rol y relacion con el proyecto.
+4. Si falla, lanza un error HTTP controlado.
+5. Si pasa, la ruta ejecuta el caso de uso con un usuario autorizado.
+
+### Beneficio
+
+La autorizacion queda centralizada y consistente. Los servicios no dependen de detalles HTTP y las rutas no duplican validaciones complejas.
+
+### Limitacion
+
+El proxy protege la entrada de las rutas. Para seguridad completa en produccion, tambien debe mantenerse alineado con politicas RLS de Supabase y restricciones de base de datos.
+
+## 11. Adapter
+
+### Objetivo en la app
+
+El dominio trabaja contra el contrato `IRepositroyFlow`, pero la aplicacion puede usar Supabase o un mock en memoria. El adaptador traduce ese contrato de dominio hacia las APIs concretas de infraestructura.
+
+### Implementacion
+
+- Puerto de dominio:
+  - `lib/domain/repositories.ts`
+  - `IRepositroyFlow`
+- Adaptadores:
+  - `lib/infrastructure/supabase/supabase-repository.ts`
+  - `lib/infrastructure/mock/mock-repository.ts`
+- Subadaptadores de Supabase:
+  - `SupabaseSnapshotQuery`
+  - `SupabaseAuthCommand`
+  - `SupabaseProjectCommand`
+  - `SupabaseBoardCommand`
+  - `SupabaseTaskCommand`
+  - `SupabaseInvitationCommand`
+  - `SupabaseNotificationCommand`
+  - `SupabaseSettingsCommand`
+- Notificaciones:
+  - `ProjectNotificationSubscriber` adapta eventos de dominio a registros persistibles de notificacion.
+
+### Flujo real
+
+1. La aplicacion solicita un `IRepositroyFlow`.
+2. `createTaskflowRepository()` decide si usar Supabase o mock.
+3. `SupabaseTaskflowRepository` implementa el contrato esperado por la aplicacion.
+4. Internamente, delega en comandos y queries especificos de Supabase.
+5. Los normalizadores traducen filas SQL a modelos de dominio.
+
+### Beneficio
+
+La aplicacion no queda acoplada al SDK de Supabase. Esto facilita pruebas, fallback mock, cambios de proveedor y evolucion del esquema.
+
+### Limitacion
+
+Cada cambio en el modelo de dominio debe reflejarse en el adaptador y en los normalizadores. El patron reduce acoplamiento, pero exige mantener bien sincronizado el contrato.
+
+## 12. Bridge
+
+### Objetivo en la app
+
+El modulo de reportes necesita calcular informacion ejecutiva una sola vez y entregarla en distintos formatos. `Bridge` separa la abstraccion del reporte de sus implementadores de salida, evitando que el caso de uso conozca detalles de HTML, CSV o JSON.
+
+### Implementacion
+
+- Abstraccion:
+  - `lib/application/reports/report-query-service.ts`
+  - `ReportQueryService`
+  - `WorkspaceReportView`
+  - `ReportDocument`
+- Implementadores:
+  - `lib/patterns/structural/bridge/report-renderer.ts`
+  - `HtmlReportRenderer`
+  - `CsvReportRenderer`
+  - `JsonReportRenderer`
+- Entradas:
+  - `app/(workspace)/reports/page.tsx`
+  - `app/api/reports/route.ts`
+
+### Flujo real
+
+1. El usuario solicita un reporte de proyecto o tablero.
+2. `TaskflowService.getWorkspaceReport(...)` carga los datos visibles para el usuario.
+3. `ReportQueryService` arma un `ReportDocument` independiente del formato.
+4. `createReportRenderer(format)` selecciona el implementador concreto.
+5. El renderer produce HTML, CSV o JSON sin cambiar el caso de uso.
+
+### Beneficio
+
+Permite cumplir el requisito de reportes sin mezclar reglas de negocio con exportacion. Agregar PDF seria una extension de `ReportRenderer`, no una reescritura del servicio de reportes.
+
+### Limitacion
+
+El reporte actual cubre metricas ejecutivas generales. Si se requieren reportes historicos o auditoria detallada, conviene crear nuevas abstracciones de reporte y reutilizar los renderers existentes.
+
 ## Como se combinan entre si
 
 Los patrones no viven aislados. En esta app se encadenan:
@@ -310,9 +552,13 @@ Los patrones no viven aislados. En esta app se encadenan:
 
 1. `Factory Method`: elige fabrica concreta por tipo.
 2. `Builder`: completa responsables, subtareas e historial.
-3. `Observer`: publica evento de tarea creada.
-4. `Factory Method` de notificaciones: elige compositor del evento.
-5. `Builder` de notificaciones: construye cada registro final.
+3. `Facade`: la ruta llama `TaskflowService.createTask(...)`.
+4. `Proxy`: la ruta valida usuario y pertenencia antes del comando.
+5. `Observer`: publica evento de tarea creada.
+6. `Factory Method` de notificaciones: elige compositor del evento.
+7. `Builder` de notificaciones: construye cada registro final.
+8. `Adapter`: persiste la tarea y la notificacion en Supabase o mock.
+9. `Composite` y `Decorator`: muestran subtareas, avance, etiquetas y estado visual en el tablero.
 
 ### Cambiar tema
 
@@ -328,6 +574,21 @@ Los patrones no viven aislados. En esta app se encadenan:
 
 1. `Prototype`: copia la tarea fuente y sus subtareas.
 2. `Builder`: termina de armar la nueva instancia si hace falta.
+
+### Consultar tablero
+
+1. `Proxy`: valida la sesion del usuario.
+2. `Facade`: `TaskflowService.getBoardPageData(...)` concentra la entrada.
+3. `Adapter`: el repositorio carga datos desde Supabase o mock.
+4. `Composite`: calcula el avance de subtareas.
+5. `Decorator`: enriquece la tarjeta con responsables, vencimiento, etiquetas y horas.
+
+### Generar reporte
+
+1. `Facade`: expone un metodo de reporte.
+2. `Bridge`: separa el reporte del renderer.
+3. `Adapter`: obtiene datos desde el repositorio activo.
+4. El renderer produce HTML, CSV o JSON sin cambiar el caso de uso.
 
 ## Beneficios obtenidos en Taskflow
 
@@ -345,6 +606,9 @@ Los patrones no viven aislados. En esta app se encadenan:
 
 ## Referencias rapidas de codigo
 
+- Mapa formal de patrones: `docs/pattern-map.md`
 - Resumen corto: `docs/pattern-traceability.md`
+- Referencia de clases: `docs/pattern-class-reference.md`
+- Diagrama completo enfocado en patrones: `docs/taskflow-patterns-complete-diagram.puml`
 - Arquitectura general: `docs/taskflow-architecture.md`
 - Diagrama de clases: `docs/taskflow-class-diagram.puml`

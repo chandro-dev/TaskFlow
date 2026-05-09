@@ -92,6 +92,8 @@ package "Patterns.Prototype" {
   class TaskPrototype
   class SubtaskPrototype
   class ProjectPrototype
+  class BoardPrototype
+  class BoardColumnPrototype
   class InvitationPrototype
 }
 
@@ -111,11 +113,13 @@ package "Application" {
   class WorkspaceQueryService
   class ProjectQueryService
   class ProjectCommandService
+  class ProjectCloneService
   class BoardCommandService
 
   class TaskCommandService
   class TaskUpdateService
   class TaskMoveService
+  class TaskDeleteService
   class TaskCloneService
 
   class InvitationQueryService
@@ -221,6 +225,8 @@ NotificationComposer ..> TaskflowSnapshot
 TaskPrototype ..> Task
 SubtaskPrototype ..> Subtask
 ProjectPrototype ..> Project
+BoardPrototype ..> Board
+BoardColumnPrototype ..> BoardColumn
 InvitationPrototype ..> MemberInvitation
 
 ' Observer
@@ -235,10 +241,12 @@ TaskflowService o--> SessionCommandService
 TaskflowService o--> WorkspaceQueryService
 TaskflowService o--> ProjectQueryService
 TaskflowService o--> ProjectCommandService
+TaskflowService o--> ProjectCloneService
 TaskflowService o--> BoardCommandService
 TaskflowService o--> TaskCommandService
 TaskflowService o--> TaskUpdateService
 TaskflowService o--> TaskMoveService
+TaskflowService o--> TaskDeleteService
 TaskflowService o--> TaskCloneService
 TaskflowService o--> InvitationQueryService
 TaskflowService o--> InvitationCommandService
@@ -253,55 +261,57 @@ AuthCommandService ..> IRepositroyFlow
 SessionCommandService ..> TaskflowAuthProvider
 WorkspaceQueryService ..> SnapshotLoader
 ProjectQueryService ..> SnapshotLoader
+ProjectCloneService ..> IRepositroyFlow
+ProjectCloneService ..> SnapshotLoader
 InvitationQueryService ..> IRepositroyFlow
+InvitationQueryService ..> SnapshotLoader
 NotificationQueryService ..> SnapshotLoader
 SettingsCommandService ..> IRepositroyFlow
 ThemePreferenceCommandService ..> IRepositroyFlow
 NotificationCommandService ..> IRepositroyFlow
-InvitationCreationGuard ..> TaskflowSnapshot
+InvitationCreationGuard ..> SnapshotLoader
+TaskDeleteService ..> IRepositroyFlow
 TaskCloneService ..> IRepositroyFlow
 TaskCloneService ..> TaskPrototype
 TaskCloneService ..> SubtaskPrototype
 TaskUpdateService ..> IRepositroyFlow
+TaskUpdateService ..> SnapshotLoader
 TaskUpdateService ..> TaskUpdateBuilder
 
 ProjectCommandService ..> IRepositroyFlow
 ProjectCommandService ..> ProjectEventPublisher
-ProjectCommandService ..> ProjectBuilder
-ProjectCommandService ..> BoardFactory
 ProjectCommandService ..> ProjectAccessPolicy
+
+ProjectCloneService ..> ProjectBuilder
+ProjectCloneService ..> ProjectPrototype
+ProjectCloneService ..> BoardPrototype
+ProjectCloneService ..> BoardColumnPrototype
+ProjectCloneService ..> ProjectEventPublisher
 
 BoardCommandService ..> IRepositroyFlow
 BoardCommandService ..> ProjectEventPublisher
-BoardCommandService ..> BoardFactory
 
 TaskCommandService ..> IRepositroyFlow
-TaskCommandService ..> ProjectEventPublisher
-TaskCommandService ..> TaskFactory
-TaskCommandService ..> TaskBuilder
 
 TaskMoveService ..> IRepositroyFlow
 
 InvitationCommandService ..> IRepositroyFlow
 InvitationCommandService ..> ProjectEventPublisher
 InvitationCommandService ..> InvitationCreationGuard
-InvitationCommandService ..> InvitationFactory
-InvitationCommandService ..> MemberInvitationBuilder
-InvitationCommandService ..> InvitationPrototype
 
 ProjectNotificationSubscriber ..> IRepositroyFlow
-ProjectNotificationSubscriber ..> ProjectNotificationBuilder
 
 ' Infrastructure wiring
 MockTaskflowRepository o--> MockTaskflowStore
 MockTaskflowStore ..> UserRegistrationBuilder
 MockTaskflowStore ..> ProjectBuilder
+MockTaskflowStore ..> BoardFactory
 MockTaskflowStore ..> TaskBuilder
 MockTaskflowStore ..> TaskFactory
 MockTaskflowStore ..> InvitationFactory
 MockTaskflowStore ..> MemberInvitationBuilder
+MockTaskflowStore ..> SubtaskPrototype
 MockTaskflowStore ..> InvitationPrototype
-MockTaskflowStore ..> ProjectPrototype
 MockTaskflowStore ..> TaskPrototype
 
 SupabaseTaskflowRepository o--> SupabaseSnapshotQuery

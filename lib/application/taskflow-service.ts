@@ -1,14 +1,19 @@
 import type {
+  CloneProjectRequestInput,
   CloneTaskRequestInput,
+  CreateBoardColumnInput,
   CreateBoardInput,
   CreateInvitationInput,
   CreateProjectInput,
   CreateTaskInput,
+  DeleteBoardColumnInput,
   DeleteTaskInput,
   MoveTaskInput,
+  ReorderBoardColumnsInput,
   TaskFilters,
   ThemeMode,
   UpdateTaskInput,
+  UpdateBoardColumnInput,
   UpdateProjectInput,
   UpdateSystemSettingsInput,
   UserProfile,
@@ -17,6 +22,7 @@ import type { PasswordAuthInput } from "@/lib/domain/auth-provider";
 import { createApplicationServices } from "@/lib/application/application-service-factory";
 import { createTaskflowRepository } from "@/lib/infrastructure/repository-factory";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
+import type { ReportFormat } from "@/lib/patterns/structural/bridge/report-renderer";
 
 export class TaskflowService {
   private readonly repository: IRepositroyFlow;
@@ -49,6 +55,10 @@ export class TaskflowService {
     return this.services.projectCommands.createProject(input, ownerId);
   }
 
+  async cloneProject(input: CloneProjectRequestInput) {
+    return this.services.projectClones.cloneProject(input);
+  }
+
   async updateProject(input: UpdateProjectInput, actorId: string) {
     return this.services.projectCommands.updateProject(input, actorId);
   }
@@ -75,6 +85,22 @@ export class TaskflowService {
 
   async createBoard(input: CreateBoardInput, actorId: string) {
     return this.services.boardCommands.createBoard(input, actorId);
+  }
+
+  async createBoardColumn(input: CreateBoardColumnInput) {
+    return this.services.boardCommands.createBoardColumn(input);
+  }
+
+  async updateBoardColumn(input: UpdateBoardColumnInput) {
+    return this.services.boardCommands.updateBoardColumn(input);
+  }
+
+  async reorderBoardColumns(input: ReorderBoardColumnsInput) {
+    return this.services.boardCommands.reorderBoardColumns(input);
+  }
+
+  async deleteBoardColumn(input: DeleteBoardColumnInput) {
+    return this.services.boardCommands.deleteBoardColumn(input);
   }
 
   async createTask(input: CreateTaskInput) {
@@ -124,6 +150,14 @@ export class TaskflowService {
 
   async getBoardsPageData(currentUser?: UserProfile) {
     return this.services.workspaceQueries.getBoardsPageData(currentUser);
+  }
+
+  async getWorkspaceReport(currentUser?: UserProfile) {
+    return this.services.reportQueries.getWorkspaceReport(currentUser);
+  }
+
+  async renderWorkspaceReport(format: ReportFormat, currentUser?: UserProfile) {
+    return this.services.reportQueries.renderWorkspaceReport(format, currentUser);
   }
 
   async updateSettings(input: UpdateSystemSettingsInput) {

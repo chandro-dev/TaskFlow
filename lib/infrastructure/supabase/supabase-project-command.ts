@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  CloneProjectInput,
+  CloneProjectResult,
   CreateProjectInput,
   CreateProjectResult,
   UpdateProjectInput,
@@ -121,6 +123,70 @@ export class SupabaseProjectCommand {
         ),
       ),
     };
+  }
+
+  async cloneProject(input: CloneProjectInput): Promise<CloneProjectResult> {
+    await this.ensureOwnerProfile(input.ownerId);
+
+    const projectDraft = new ProjectBuilder({
+      name: input.name,
+      description: input.description,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      ownerId: input.ownerId,
+      state: input.state,
+    })
+      .normalize()
+      .validate()
+      .buildProject(crypto.randomUUID());
+
+    const { data: projectRow, error: projectError } = await this.client
+      .from("projects")
+      .insert({
+        owner_id: projectDraft.ownerId,
+        name: projectDraft.name,
+        description: projectDraft.description,
+        start_date: projectDraft.startDate,
+        end_date: projectDraft.endDate,
+        state: projectDraft.state,
+        archived: false,
+      })
+      .select("*")
+      .single();
+
+    if (projectError || !projectRow) {
+      throw new Error(
+        projectError?.message ?? "No fue posible clonar el proyecto.",
+      );
+    }
+
+    const projectId = (projectRow as ProjectRow).id;
+
+    try {
+      const { error: memberError } = await this.client.from("project_members").upsert({
+        project_id: projectId,
+        user_id: input.ownerId,
+        member_role: "PROJECT_MANAGER",
+        invited_by: input.ownerId,
+      });
+
+      if (memberError) {
+        throw new Error(
+          memberError.message ??
+            "El proyecto fue clonado, pero no fue posible registrar al propietario.",
+        );
+      }
+
+      const boards = await this.persistClonedBoards(projectId, input.boards);
+
+      return {
+        project: normalizeProject(projectRow as ProjectRow, [input.ownerId], boards.map((board) => board.id)),
+        boards,
+      };
+    } catch (error) {
+      await this.client.from("projects").delete().eq("id", projectId);
+      throw error;
+    }
   }
 
   async updateProject(input: UpdateProjectInput) {
@@ -489,5 +555,64 @@ export class SupabaseProjectCommand {
       ],
       ((boardRows ?? []) as Array<{ id: string }>).map((row) => row.id),
     );
+  }
+
+  private async persistClonedBoards(
+    projectId: string,
+    boards: CloneProjectInput["boards"],
+  ) {
+    const persistedBoards = [];
+
+    for (const board of boards) {
+      const { data: boardRow, error: boardError } = await this.client
+        .from("boards")
+        .insert({
+          project_id: projectId,
+          name: board.name.trim(),
+        })
+        .select("*")
+        .single();
+
+      if (boardError || !boardRow) {
+        throw new Error(
+          boardError?.message ??
+            "No fue posible clonar uno de los tableros del proyecto.",
+        );
+      }
+
+      const { data: columnRows, error: columnsError } = await this.client
+        .from("board_columns")
+        .insert(
+          board.columns
+            .slice()
+            .sort((left, right) => left.order - right.order)
+            .map((column) => ({
+              board_id: (boardRow as BoardRow).id,
+              name: column.name.trim(),
+              position: column.order,
+              color: column.color,
+              wip_limit: column.wipLimit ?? null,
+            })),
+        )
+        .select("*");
+
+      if (columnsError) {
+        throw new Error(
+          columnsError.message ??
+            "No fue posible clonar las columnas de uno de los tableros.",
+        );
+      }
+
+      persistedBoards.push(
+        normalizeBoard(
+          boardRow as BoardRow,
+          ((columnRows ?? []) as BoardColumnRow[]).map((column) =>
+            normalizeBoardColumn(column),
+          ),
+        ),
+      );
+    }
+
+    return persistedBoards;
   }
 }

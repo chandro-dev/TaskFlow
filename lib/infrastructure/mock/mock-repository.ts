@@ -24,6 +24,10 @@ export class MockTaskflowRepository implements IRepositroyFlow {
     return this.store.createProject(input);
   }
 
+  async cloneProject(input: Parameters<IRepositroyFlow["cloneProject"]>[0]) {
+    return this.store.cloneProject(input);
+  }
+
   async updateProject(input: Parameters<IRepositroyFlow["updateProject"]>[0]) {
     return this.store.updateProject(input);
   }
@@ -46,6 +50,24 @@ export class MockTaskflowRepository implements IRepositroyFlow {
 
   async createBoard(input: Parameters<IRepositroyFlow["createBoard"]>[0]) {
     return this.store.createBoard(input);
+  }
+
+  async createBoardColumn(input: Parameters<IRepositroyFlow["createBoardColumn"]>[0]) {
+    return this.store.createBoardColumn(input);
+  }
+
+  async updateBoardColumn(input: Parameters<IRepositroyFlow["updateBoardColumn"]>[0]) {
+    return this.store.updateBoardColumn(input);
+  }
+
+  async reorderBoardColumns(
+    input: Parameters<IRepositroyFlow["reorderBoardColumns"]>[0],
+  ) {
+    return this.store.reorderBoardColumns(input);
+  }
+
+  async deleteBoardColumn(input: Parameters<IRepositroyFlow["deleteBoardColumn"]>[0]) {
+    return this.store.deleteBoardColumn(input);
   }
 
   async createTask(input: Parameters<IRepositroyFlow["createTask"]>[0]) {

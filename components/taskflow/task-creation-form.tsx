@@ -135,6 +135,20 @@ export function TaskCreationForm({
               required
             />
           </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <input
+              type="number"
+              min="0"
+              value={form.spentHours}
+              onChange={(event) => onFieldChange("spentHours", event.target.value)}
+              className="taskflow-input"
+              placeholder="Horas trabajadas"
+            />
+            <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text-secondary)]">
+              Registra el tiempo invertido acumulado en la tarea. Puedes dejarlo en `0` si aun no se ha trabajado.
+            </div>
+          </div>
         </section>
 
         <TaskSubtaskEditor

@@ -44,6 +44,7 @@ export class SupabaseTaskCommand {
         target_type: draftTask.type,
         target_due_date: draftTask.dueDate,
         target_estimate_hours: draftTask.estimateHours,
+        target_spent_hours: draftTask.spentHours,
         target_assignee_ids: draftTask.assigneeIds,
         target_subtasks: this.serializeSubtasks(input.subtasks ?? []),
       },
@@ -75,6 +76,7 @@ export class SupabaseTaskCommand {
       target_type: input.type,
       target_due_date: input.dueDate,
       target_estimate_hours: input.estimateHours,
+      target_spent_hours: input.spentHours,
       target_assignee_ids: input.assigneeIds,
       target_subtasks: this.serializeSubtasks(input.subtasks),
     });
@@ -221,6 +223,7 @@ export class SupabaseTaskCommand {
       description: input.description.trim(),
       dueDate: input.dueDate,
       estimateHours: input.estimateHours,
+      spentHours: input.spentHours ?? 0,
       priority: input.priority,
     });
 

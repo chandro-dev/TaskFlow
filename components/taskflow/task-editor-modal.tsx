@@ -92,6 +92,7 @@ export function TaskEditorModal({
         body: JSON.stringify({
           ...form,
           estimateHours: Number(form.estimateHours),
+          spentHours: Number(form.spentHours),
         }),
       },
     );

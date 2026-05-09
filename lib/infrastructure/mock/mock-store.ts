@@ -1,4 +1,6 @@
 import type {
+  CloneProjectInput,
+  CloneProjectResult,
   CloneTaskInput,
   CreateProjectNotificationInput,
   CreateBoardInput,
@@ -28,7 +30,10 @@ import { ProjectNotificationBuilder } from "@/lib/patterns/builder/project-notif
 import { ProjectBuilder } from "@/lib/patterns/builder/project-builder";
 import { TaskBuilder } from "@/lib/patterns/builder/task-builder";
 import { UserRegistrationBuilder } from "@/lib/patterns/builder/user-registration-builder";
-import { createBoardFactory } from "@/lib/patterns/factory/board-factory";
+import {
+  createBoardFactory,
+  getDefaultBoardColumnDrafts,
+} from "@/lib/patterns/factory/board-factory";
 import { createInvitationFactory } from "@/lib/patterns/factory/invitation-factory";
 import { createTaskFactory } from "@/lib/patterns/factory/task-factory";
 import { createUserProfileFactory } from "@/lib/patterns/factory/user-profile-factory";
@@ -119,6 +124,59 @@ export class MockTaskflowStore {
     return {
       project: structuredClone(project),
       board: structuredClone(board),
+    };
+  }
+
+  cloneProject(input: CloneProjectInput): CloneProjectResult {
+    const project = new ProjectBuilder({
+      name: input.name,
+      description: input.description,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      ownerId: input.ownerId,
+      state: input.state,
+    })
+      .normalize()
+      .validate()
+      .buildProject(crypto.randomUUID());
+
+    const boards = input.boards.map((board) => {
+      const boardId = crypto.randomUUID();
+      const columns = board.columns
+        .slice()
+        .sort((left, right) => left.order - right.order)
+        .map((column) => ({
+          id: crypto.randomUUID(),
+          boardId,
+          name: column.name.trim(),
+          order: column.order,
+          color: column.color,
+          wipLimit: column.wipLimit,
+        }));
+
+      return {
+        id: boardId,
+        projectId: project.id,
+        name: board.name.trim(),
+        columns,
+      };
+    });
+
+    project.boardIds = boards.map((board) => board.id);
+    project.memberIds = [input.ownerId];
+
+    this.snapshot.projects.unshift(project);
+    this.snapshot.projectMembers.unshift({
+      projectId: project.id,
+      userId: input.ownerId,
+      memberRole: "PROJECT_MANAGER",
+      invitedBy: input.ownerId,
+    });
+    this.snapshot.boards.unshift(...boards);
+
+    return {
+      project: structuredClone(project),
+      boards: structuredClone(boards),
     };
   }
 
@@ -265,11 +323,115 @@ export class MockTaskflowStore {
       throw new Error("Proyecto no encontrado.");
     }
 
-    const { board } = createBoardFactory().create(input.projectId, input.name);
+    const { board } = createBoardFactory().create(
+      input.projectId,
+      input.name,
+      input.columns,
+    );
     project.boardIds.push(board.id);
     this.snapshot.boards.unshift(board);
 
     return structuredClone(board);
+  }
+
+  createBoardColumn(input: { projectId: string; boardId: string; name: string }) {
+    const board = this.findBoardAggregate(input.projectId, input.boardId);
+    const defaults = getDefaultBoardColumnDrafts();
+    const fallback = defaults[board.columns.length % defaults.length];
+
+    board.columns.push({
+      id: crypto.randomUUID(),
+      boardId: board.id,
+      name: input.name.trim(),
+      order: board.columns.length + 1,
+      color: fallback?.color ?? "#b8c2d4",
+      wipLimit: fallback?.wipLimit,
+    });
+
+    return structuredClone(this.sortBoardColumns(board));
+  }
+
+  updateBoardColumn(input: {
+    projectId: string;
+    boardId: string;
+    columnId: string;
+    name: string;
+  }) {
+    const board = this.findBoardAggregate(input.projectId, input.boardId);
+    const column = board.columns.find((item) => item.id === input.columnId);
+
+    if (!column) {
+      throw new Error("La columna no existe dentro del tablero.");
+    }
+
+    column.name = input.name.trim();
+    return structuredClone(this.sortBoardColumns(board));
+  }
+
+  reorderBoardColumns(input: {
+    projectId: string;
+    boardId: string;
+    orderedColumnIds: string[];
+  }) {
+    const board = this.findBoardAggregate(input.projectId, input.boardId);
+    const currentIds = board.columns.map((column) => column.id);
+
+    if (
+      currentIds.length !== input.orderedColumnIds.length ||
+      currentIds.some((columnId) => !input.orderedColumnIds.includes(columnId))
+    ) {
+      throw new Error("El nuevo orden no coincide con las columnas actuales del tablero.");
+    }
+
+    board.columns = input.orderedColumnIds.map((columnId, index) => {
+      const column = board.columns.find((item) => item.id === columnId);
+
+      if (!column) {
+        throw new Error("La columna no existe dentro del tablero.");
+      }
+
+      return {
+        ...column,
+        order: index + 1,
+      };
+    });
+
+    return structuredClone(this.sortBoardColumns(board));
+  }
+
+  deleteBoardColumn(input: {
+    projectId: string;
+    boardId: string;
+    columnId: string;
+  }) {
+    const board = this.findBoardAggregate(input.projectId, input.boardId);
+
+    if (board.columns.length <= 1) {
+      throw new Error("El tablero debe conservar al menos una columna.");
+    }
+
+    const column = board.columns.find((item) => item.id === input.columnId);
+
+    if (!column) {
+      throw new Error("La columna no existe dentro del tablero.");
+    }
+
+    const hasTasks = this.snapshot.tasks.some(
+      (task) => task.boardId === input.boardId && task.columnId === input.columnId,
+    );
+
+    if (hasTasks) {
+      throw new Error("No puedes eliminar una columna que todavia contiene tareas.");
+    }
+
+    board.columns = board.columns
+      .filter((item) => item.id !== input.columnId)
+      .map((item, index) => ({
+        ...item,
+        order: index + 1,
+      }));
+
+    return structuredClone(this.sortBoardColumns(board));
   }
 
   createTask(input: CreateTaskInput): Task {
@@ -296,6 +458,7 @@ export class MockTaskflowStore {
       description: input.description.trim(),
       dueDate: input.dueDate,
       estimateHours: input.estimateHours,
+      spentHours: input.spentHours ?? 0,
       priority: input.priority,
     });
 
@@ -350,6 +513,7 @@ export class MockTaskflowStore {
       type: input.type,
       dueDate: input.dueDate,
       estimateHours: input.estimateHours,
+      spentHours: input.spentHours,
       assigneeIds: [...new Set(input.assigneeIds)],
       subtasks: nextSubtasks,
       updatedAt: new Date().toISOString(),
@@ -674,5 +838,23 @@ export class MockTaskflowStore {
       title: subtask.title.trim(),
       isCompleted: subtask.isCompleted,
     });
+  }
+
+  private findBoardAggregate(projectId: string, boardId: string) {
+    const board = this.snapshot.boards.find((item) => item.id === boardId);
+
+    if (!board || board.projectId !== projectId) {
+      throw new Error("El tablero no existe dentro del proyecto.");
+    }
+
+    return board;
+  }
+
+  private sortBoardColumns(board: TaskflowSnapshot["boards"][number]) {
+    board.columns = board.columns
+      .slice()
+      .sort((left, right) => left.order - right.order);
+
+    return board;
   }
 }

@@ -17,6 +17,7 @@ export async function POST(
     priority?: TaskPriority;
     dueDate?: string;
     estimateHours?: number;
+    spentHours?: number;
     assigneeIds?: string[];
     subtasks?: TaskSubtaskInput[];
     columnId?: string;
@@ -35,6 +36,7 @@ export async function POST(
       priority: body.priority,
       dueDate: body.dueDate ?? "",
       estimateHours: Number(body.estimateHours ?? 0),
+      spentHours: Number(body.spentHours ?? 0),
       assigneeIds: body.assigneeIds ?? [],
       subtasks: body.subtasks ?? [],
     });

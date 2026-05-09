@@ -41,6 +41,10 @@ export class TaskUpdateService {
       throw new Error("La estimacion debe ser mayor que cero.");
     }
 
+    if (input.spentHours < 0) {
+      throw new Error("Las horas trabajadas no pueden ser negativas.");
+    }
+
     const normalizedSubtasks = input.subtasks.map((subtask) => ({
       id: subtask.id,
       title: subtask.title.trim(),
@@ -62,6 +66,7 @@ export class TaskUpdateService {
         type: input.type,
         dueDate: input.dueDate,
         estimateHours: input.estimateHours,
+        spentHours: input.spentHours,
       })
       .withAssignees(input.assigneeIds)
       .withSubtasks(normalizedSubtasks)
@@ -79,6 +84,7 @@ export class TaskUpdateService {
       type: updatedTask.type,
       dueDate: updatedTask.dueDate,
       estimateHours: updatedTask.estimateHours,
+      spentHours: updatedTask.spentHours,
       assigneeIds: updatedTask.assigneeIds,
       subtasks: updatedTask.subtasks.map((subtask) => ({
         id: subtask.id,

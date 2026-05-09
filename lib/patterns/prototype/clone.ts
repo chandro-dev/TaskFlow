@@ -1,4 +1,10 @@
-import type { Project, Subtask, Task } from "@/lib/domain/models";
+import type {
+  Board,
+  BoardColumn,
+  Project,
+  Subtask,
+  Task,
+} from "@/lib/domain/models";
 
 // Pattern traceability: Prototype.
 // A clone starts from an existing aggregate and then applies technical
@@ -50,4 +56,29 @@ export class ProjectPrototype {
     };
   }
 }
-  
+
+export class BoardPrototype {
+  constructor(private readonly source: Board) {}
+
+  clone(overrides: Partial<Board> = {}) {
+    const clone = structuredClone(this.source);
+    return {
+      ...clone,
+      ...overrides,
+      id: overrides.id ?? crypto.randomUUID(),
+    };
+  }
+}
+
+export class BoardColumnPrototype {
+  constructor(private readonly source: BoardColumn) {}
+
+  clone(overrides: Partial<BoardColumn> = {}) {
+    const clone = structuredClone(this.source);
+    return {
+      ...clone,
+      ...overrides,
+      id: overrides.id ?? crypto.randomUUID(),
+    };
+  }
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProjectCloneModal } from "@/components/taskflow/project-clone-modal";
 import type { ProjectCardView } from "@/lib/domain/models";
 import { ProjectManager } from "@/components/taskflow/project-manager";
 import { percentage, projectStateLabel } from "@/lib/utils/format";
@@ -55,6 +56,7 @@ export function ProjectCard({ project }: { project: ProjectCardView }) {
         >
           Abrir tablero
         </Link>
+        <ProjectCloneModal project={project} />
         <div className="rounded-full bg-[color:var(--color-surface-muted)] px-4 py-2 text-sm text-[color:var(--color-text-secondary)]">
           {project.completedTasks}/{project.totalTasks} tareas cerradas
         </div>

@@ -3,6 +3,7 @@
 Este mapa resume donde vive cada patron y en que flujo principal se activa.
 
 Si necesitas la explicacion completa, revisa tambien `docs/design-patterns-guide.md`.
+Para la tabla formal de entrega, revisa `docs/pattern-map.md`.
 
 ## Singleton
 
@@ -40,9 +41,60 @@ Si necesitas la explicacion completa, revisa tambien `docs/design-patterns-guide
 - Clonado de tareas y subtareas: [clone.ts](/e:/proyectos/taskflow/lib/patterns/prototype/clone.ts)
 - Reenvio de invitaciones: [invitation-prototype.ts](/e:/proyectos/taskflow/lib/patterns/prototype/invitation-prototype.ts)
 - Caso de uso principal: [task-clone-service.ts](/e:/proyectos/taskflow/lib/application/tasks/task-clone-service.ts)
+- Caso de uso de proyecto: [project-clone-service.ts](/e:/proyectos/taskflow/lib/application/projects/project-clone-service.ts)
 
 ## Observer
 
 - Publicador: [project-event-publisher.ts](/e:/proyectos/taskflow/lib/patterns/observer/project-event-publisher.ts)
 - Suscriptor de notificaciones: [project-notification-subscriber.ts](/e:/proyectos/taskflow/lib/application/notifications/project-notification-subscriber.ts)
 - Publicacion desde comandos: [project-command-service.ts](/e:/proyectos/taskflow/lib/application/projects/project-command-service.ts)
+
+## Facade
+
+- Fachada principal: [taskflow-service.ts](/e:/proyectos/taskflow/lib/application/taskflow-service.ts)
+- Ensamble de servicios: [application-service-factory.ts](/e:/proyectos/taskflow/lib/application/application-service-factory.ts)
+- Uso en paginas: [projects/page.tsx](/e:/proyectos/taskflow/app/(workspace)/projects/page.tsx)
+- Uso en API: [route.ts](/e:/proyectos/taskflow/app/api/projects/route.ts)
+- Proposito: ocultar la coordinacion de servicios de aplicacion detras de metodos como `createProject`, `createTask`, `getBoardPageData`, `login` y `acceptInvitation`.
+
+## Composite
+
+- Modelo padre: [models.ts](/e:/proyectos/taskflow/lib/domain/models.ts)
+- Subtareas: `Task.subtasks`
+- Calculo de avance: [workspace-mappers.ts](/e:/proyectos/taskflow/lib/application/shared/workspace-mappers.ts)
+- Uso visual: [task-card.tsx](/e:/proyectos/taskflow/components/taskflow/task-card.tsx)
+- Proposito: tratar tarea y subtareas como una unidad para calcular y mostrar progreso.
+
+## Decorator
+
+- Modelo decorado: [models.ts](/e:/proyectos/taskflow/lib/domain/models.ts)
+- Vista enriquecida: `BoardTaskView`
+- Enriquecimiento: [workspace-mappers.ts](/e:/proyectos/taskflow/lib/application/shared/workspace-mappers.ts)
+- Presentacion: [task-card.tsx](/e:/proyectos/taskflow/components/taskflow/task-card.tsx)
+- Proposito: agregar etiquetas, responsables, vencimiento, horas y progreso a la tarjeta sin cambiar la identidad de la tarea.
+
+## Proxy
+
+- Sesion requerida: [current-user.ts](/e:/proyectos/taskflow/lib/auth/current-user.ts)
+- Usuario requerido en API: [require-route-user.ts](/e:/proyectos/taskflow/lib/api/require-route-user.ts)
+- Autorizacion por proyecto: [route-authorization.ts](/e:/proyectos/taskflow/lib/api/route-authorization.ts)
+- Uso en tareas: [route.ts](/e:/proyectos/taskflow/app/api/projects/[projectId]/boards/[boardId]/tasks/route.ts)
+- Proposito: validar identidad, rol y pertenencia antes de permitir operaciones sensibles.
+
+## Adapter
+
+- Puerto de dominio: [repositories.ts](/e:/proyectos/taskflow/lib/domain/repositories.ts)
+- Adaptador Supabase: [supabase-repository.ts](/e:/proyectos/taskflow/lib/infrastructure/supabase/supabase-repository.ts)
+- Adaptador mock: [mock-repository.ts](/e:/proyectos/taskflow/lib/infrastructure/mock/mock-repository.ts)
+- Selector de adaptador: [repository-factory.ts](/e:/proyectos/taskflow/lib/infrastructure/repository-factory.ts)
+- Adaptador de notificaciones: [project-notification-subscriber.ts](/e:/proyectos/taskflow/lib/application/notifications/project-notification-subscriber.ts)
+- Proposito: traducir el contrato del dominio hacia Supabase, mock y registros de notificacion.
+
+## Bridge
+
+- Abstraccion de reportes: [report-query-service.ts](/e:/proyectos/taskflow/lib/application/reports/report-query-service.ts)
+- Implementadores: [report-renderer.ts](/e:/proyectos/taskflow/lib/patterns/structural/bridge/report-renderer.ts)
+- Vista de reportes: [page.tsx](/e:/proyectos/taskflow/app/(workspace)/reports/page.tsx)
+- Exportacion: [route.ts](/e:/proyectos/taskflow/app/api/reports/route.ts)
+- Datos fuente: [taskflow-service.ts](/e:/proyectos/taskflow/lib/application/taskflow-service.ts)
+- Proposito: separar el calculo del reporte del formato de salida para entregar HTML, CSV o JSON sin cambiar el caso de uso.

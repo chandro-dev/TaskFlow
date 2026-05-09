@@ -15,6 +15,7 @@ export type TaskFormState = {
   priority: TaskPriority;
   dueDate: string;
   estimateHours: string;
+  spentHours: string;
   assigneeIds: string[];
   columnId: string;
   subtasks: TaskSubtaskInput[];
@@ -28,6 +29,7 @@ export function createEmptyTaskForm(columns: BoardColumn[]): TaskFormState {
     priority: "MEDIA",
     dueDate: "",
     estimateHours: "4",
+    spentHours: "0",
     assigneeIds: [],
     columnId: columns[0]?.id ?? "",
     subtasks: [],
@@ -42,6 +44,7 @@ export function createTaskFormFromTask(task: BoardTaskView): TaskFormState {
     priority: task.priority,
     dueDate: task.dueDate,
     estimateHours: String(task.estimateHours),
+    spentHours: String(task.spentHours),
     assigneeIds: task.assigneeIds,
     columnId: task.columnId,
     subtasks: task.subtasks.map((subtask) => ({

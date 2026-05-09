@@ -88,6 +88,7 @@ export function TaskCreator({
       body: JSON.stringify({
         ...form,
         estimateHours: Number(form.estimateHours),
+        spentHours: Number(form.spentHours),
         assigneeIds: form.assigneeIds,
         subtasks: form.subtasks,
       }),

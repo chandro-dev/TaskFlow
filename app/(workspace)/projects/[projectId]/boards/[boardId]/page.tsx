@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BoardColumnManagerModal } from "@/components/taskflow/board-column-manager-modal";
 import { BoardMemberManagerModal } from "@/components/taskflow/board-member-manager-modal";
 import { ProjectBoardSwitcher } from "@/components/taskflow/project-board-switcher";
 import { TaskCreator } from "@/components/taskflow/task-creator";
@@ -69,6 +70,7 @@ export default async function BoardPage({
     data.currentUser.role === "ADMIN" ||
     data.project.ownerId === data.currentUser.id ||
     currentMembership?.memberRole === "PROJECT_MANAGER";
+  const canManageColumns = canManageMembers;
 
   return (
     <div className="space-y-8">
@@ -100,6 +102,13 @@ export default async function BoardPage({
               projectName={data.project.name}
               projectMembers={data.projectMembers}
               canManageMembers={canManageMembers}
+            />
+          ) : null}
+          {canManageColumns ? (
+            <BoardColumnManagerModal
+              projectId={data.project.id}
+              boardId={data.board.id}
+              columns={data.columns}
             />
           ) : null}
           <TaskCreator

@@ -14,6 +14,7 @@ import type {
   UserProfile,
 } from "@/lib/domain/models";
 import { ProjectAccessPolicy } from "@/lib/domain/policies/project-access-policy";
+import { decorateBoardTask } from "@/lib/patterns/structural/decorator/board-task-decorator";
 
 const projectAccessPolicy = new ProjectAccessPolicy();
 
@@ -52,15 +53,6 @@ export function isTaskMatching(task: Task, filters: TaskFilters) {
   }
 
   return true;
-}
-
-function subtaskProgress(task: Task) {
-  if (task.subtasks.length === 0) {
-    return 0;
-  }
-
-  const completed = task.subtasks.filter((item) => item.isCompleted).length;
-  return Math.round((completed / task.subtasks.length) * 100);
 }
 
 export function buildProjectCard(
@@ -121,16 +113,7 @@ export function hydrateBoardTask(
   task: Task,
   snapshot: TaskflowSnapshot,
 ): BoardTaskView {
-  return {
-    ...task,
-    assignees: snapshot.users.filter((user) => task.assigneeIds.includes(user.id)),
-    isOverdue:
-      new Date(task.dueDate) < new Date() &&
-      !["column-done", "column-archive-done", "column-mobile-done"].includes(
-        task.columnId,
-      ),
-    subtaskProgress: subtaskProgress(task),
-  };
+  return decorateBoardTask(task, snapshot);
 }
 
 export function buildBoardSummary(

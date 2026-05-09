@@ -22,6 +22,7 @@ export class TaskUpdateBuilder {
       | "type"
       | "dueDate"
       | "estimateHours"
+      | "spentHours"
     >,
   ) {
     this.draft.columnId = fields.columnId;
@@ -31,6 +32,7 @@ export class TaskUpdateBuilder {
     this.draft.type = fields.type;
     this.draft.dueDate = fields.dueDate;
     this.draft.estimateHours = fields.estimateHours;
+    this.draft.spentHours = fields.spentHours;
     return this;
   }
 

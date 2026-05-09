@@ -19,6 +19,7 @@ export async function PATCH(
     priority?: TaskPriority;
     dueDate?: string;
     estimateHours?: number;
+    spentHours?: number;
     assigneeIds?: string[];
     subtasks?: TaskSubtaskInput[];
     columnId?: string;
@@ -38,6 +39,7 @@ export async function PATCH(
       priority: body.priority ?? "MEDIA",
       dueDate: body.dueDate ?? "",
       estimateHours: Number(body.estimateHours ?? 0),
+      spentHours: Number(body.spentHours ?? 0),
       assigneeIds: body.assigneeIds ?? [],
       subtasks: body.subtasks ?? [],
     });

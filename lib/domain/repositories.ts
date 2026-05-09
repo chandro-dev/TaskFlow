@@ -1,9 +1,13 @@
 import type {
   Board,
   CreateProjectNotificationInput,
+  CreateBoardColumnInput,
+  CloneProjectInput,
+  CloneProjectResult,
   CreateProjectInput,
   CreateProjectResult,
   CreateBoardInput,
+  DeleteBoardColumnInput,
   CreateInvitationInput,
   CreateTaskInput,
   CloneTaskInput,
@@ -11,12 +15,14 @@ import type {
   MoveTaskInput,
   ProjectNotification,
   Project,
+  ReorderBoardColumnsInput,
   RegisterUserInput,
   RegisterUserResult,
   SystemSettings,
   TaskflowSnapshot,
   ThemeMode,
   UpdateTaskInput,
+  UpdateBoardColumnInput,
   UpdateProjectInput,
   UpdateInvitationStatusInput,
   UpdateSystemSettingsInput,
@@ -30,6 +36,7 @@ export interface IRepositroyFlow {
   findUserByEmail(email: string): Promise<UserProfile | null>;
   registerUser(input: RegisterUserInput): Promise<RegisterUserResult>;
   createProject(input: CreateProjectInput): Promise<CreateProjectResult>;
+  cloneProject(input: CloneProjectInput): Promise<CloneProjectResult>;
   updateProject(input: UpdateProjectInput): Promise<Project>;
   deleteProject(projectId: string): Promise<void>;
   removeProjectMember(projectId: string, memberId: string): Promise<Project>;
@@ -39,6 +46,10 @@ export interface IRepositroyFlow {
     memberRole: UserProfile["role"],
   ): Promise<Project>;
   createBoard(input: CreateBoardInput): Promise<Board>;
+  createBoardColumn(input: CreateBoardColumnInput): Promise<Board>;
+  updateBoardColumn(input: UpdateBoardColumnInput): Promise<Board>;
+  reorderBoardColumns(input: ReorderBoardColumnsInput): Promise<Board>;
+  deleteBoardColumn(input: DeleteBoardColumnInput): Promise<Board>;
   createTask(input: CreateTaskInput): Promise<Task>;
   updateTask(input: UpdateTaskInput): Promise<Task>;
   deleteTask(input: { taskId: string; projectId: string; boardId: string }): Promise<void>;

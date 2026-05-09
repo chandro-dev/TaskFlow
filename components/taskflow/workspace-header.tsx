@@ -21,6 +21,7 @@ function buildNavigationLinks(boardHref: string) {
   return [
     { href: "/projects", label: "Proyectos" },
     { href: boardHref, label: "Tableros" },
+    { href: "/reports", label: "Reportes" },
     { href: "/settings", label: "Configuracion" },
   ].filter(
     (link, index, collection) =>

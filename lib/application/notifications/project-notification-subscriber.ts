@@ -4,11 +4,12 @@ import type {
   ProjectNotificationEvent,
 } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
-import { createNotificationComposer } from "@/lib/patterns/factory/notification-composer-factory";
 import type { ProjectEventSubscriber } from "@/lib/patterns/observer/project-event-publisher";
+import { NotificationEventAdapter } from "@/lib/patterns/structural/adapter/notification-event-adapter";
 
 export class ProjectNotificationSubscriber implements ProjectEventSubscriber {
   private readonly snapshotLoader: SnapshotLoader;
+  private readonly notificationAdapter = new NotificationEventAdapter();
 
   constructor(private readonly repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
@@ -16,9 +17,8 @@ export class ProjectNotificationSubscriber implements ProjectEventSubscriber {
 
   async handle(event: ProjectNotificationEvent) {
     const snapshot = await this.snapshotLoader.load();
-    // Factory Method resolves the composer that knows how to translate this
-    // event kind into user-facing notification payloads.
-    const notifications = createNotificationComposer(event.kind).compose(
+    // Adapter translates domain events into notification persistence inputs.
+    const notifications = this.notificationAdapter.toNotificationInputs(
       event,
       snapshot,
     );

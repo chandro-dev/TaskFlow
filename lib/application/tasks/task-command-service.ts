@@ -32,6 +32,10 @@ export class TaskCommandService {
       throw new Error("La estimacion debe ser mayor que cero.");
     }
 
+    if ((input.spentHours ?? 0) < 0) {
+      throw new Error("Las horas trabajadas no pueden ser negativas.");
+    }
+
     const subtasks = (input.subtasks ?? []).map((subtask) => ({
       title: subtask.title.trim(),
       isCompleted: subtask.isCompleted,
@@ -45,7 +49,16 @@ export class TaskCommandService {
       ...input,
       title,
       description,
+      spentHours: input.spentHours ?? 0,
       subtasks,
+    });
+
+    await this.notificationPublisher.publish({
+      kind: "TASK_CREATED",
+      projectId: input.projectId,
+      boardId: input.boardId,
+      taskId: task.id,
+      actorId: input.actorId,
     });
 
     return task;

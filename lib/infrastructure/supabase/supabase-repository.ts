@@ -60,6 +60,11 @@ export class SupabaseTaskflowRepository implements IRepositroyFlow {
     return new SupabaseProjectCommand(client).createProject(input);
   }
 
+  async cloneProject(input: Parameters<IRepositroyFlow["cloneProject"]>[0]) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseProjectCommand(client).cloneProject(input);
+  }
+
   async updateProject(input: Parameters<IRepositroyFlow["updateProject"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseProjectCommand(client).updateProject(input);
@@ -91,6 +96,34 @@ export class SupabaseTaskflowRepository implements IRepositroyFlow {
   async createBoard(input: Parameters<IRepositroyFlow["createBoard"]>[0]) {
     const client = await getSupabaseClientOrThrow();
     return new SupabaseBoardCommand(client).createBoard(input);
+  }
+
+  async createBoardColumn(
+    input: Parameters<IRepositroyFlow["createBoardColumn"]>[0],
+  ) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseBoardCommand(client).createBoardColumn(input);
+  }
+
+  async updateBoardColumn(
+    input: Parameters<IRepositroyFlow["updateBoardColumn"]>[0],
+  ) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseBoardCommand(client).updateBoardColumn(input);
+  }
+
+  async reorderBoardColumns(
+    input: Parameters<IRepositroyFlow["reorderBoardColumns"]>[0],
+  ) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseBoardCommand(client).reorderBoardColumns(input);
+  }
+
+  async deleteBoardColumn(
+    input: Parameters<IRepositroyFlow["deleteBoardColumn"]>[0],
+  ) {
+    const client = await getSupabaseClientOrThrow();
+    return new SupabaseBoardCommand(client).deleteBoardColumn(input);
   }
 
   async createTask(input: Parameters<IRepositroyFlow["createTask"]>[0]) {

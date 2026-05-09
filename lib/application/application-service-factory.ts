@@ -7,8 +7,10 @@ import { InvitationQueryService } from "@/lib/application/invitations/invitation
 import { NotificationCommandService } from "@/lib/application/notifications/notification-command-service";
 import { NotificationQueryService } from "@/lib/application/notifications/notification-query-service";
 import { ProjectNotificationSubscriber } from "@/lib/application/notifications/project-notification-subscriber";
+import { ProjectCloneService } from "@/lib/application/projects/project-clone-service";
 import { ProjectCommandService } from "@/lib/application/projects/project-command-service";
 import { ProjectQueryService } from "@/lib/application/projects/project-query-service";
+import { ReportQueryService } from "@/lib/application/reports/report-query-service";
 import { SettingsCommandService } from "@/lib/application/settings/settings-command-service";
 import { ThemePreferenceCommandService } from "@/lib/application/settings/theme-preference-command-service";
 import { TaskCommandService } from "@/lib/application/tasks/task-command-service";
@@ -34,6 +36,8 @@ export function createApplicationServices(repository: IRepositroyFlow) {
     boardCommands: new BoardCommandService(repository, notificationPublisher),
     projectQueries: new ProjectQueryService(repository),
     projectCommands: new ProjectCommandService(repository, notificationPublisher),
+    projectClones: new ProjectCloneService(repository, notificationPublisher),
+    reportQueries: new ReportQueryService(repository),
     invitationQueries: new InvitationQueryService(repository),
     invitationCommands: new InvitationCommandService(repository, notificationPublisher),
     notificationQueries: new NotificationQueryService(repository),

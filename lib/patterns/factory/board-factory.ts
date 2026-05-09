@@ -1,4 +1,8 @@
-import type { Board, BoardColumn } from "@/lib/domain/models";
+import type {
+  Board,
+  BoardColumn,
+  BoardColumnDraftInput,
+} from "@/lib/domain/models";
 
 // Pattern traceability: Factory Method.
 // Board creation encapsulates the default Kanban structure so project creation
@@ -9,9 +13,13 @@ export interface BoardFactoryResult {
 }
 
 abstract class BoardFactory {
-  create(projectId: string, name?: string): BoardFactoryResult {
+  create(
+    projectId: string,
+    name?: string,
+    columnDrafts?: BoardColumnDraftInput[],
+  ): BoardFactoryResult {
     const boardId = crypto.randomUUID();
-    const columns = this.createColumns(boardId);
+    const columns = this.createColumns(boardId, columnDrafts);
 
     return {
       board: {
@@ -25,52 +33,72 @@ abstract class BoardFactory {
   }
 
   protected abstract boardName(name?: string): string;
-  protected abstract createColumns(boardId: string): BoardColumn[];
+  protected abstract createColumns(
+    boardId: string,
+    columnDrafts?: BoardColumnDraftInput[],
+  ): BoardColumn[];
 }
 
 class DefaultKanbanBoardFactory extends BoardFactory {
+  private readonly defaultColumns: Array<Required<BoardColumnDraftInput>> = [
+    {
+      name: "Por hacer",
+      color: "#b8c2d4",
+      wipLimit: 4,
+    },
+    {
+      name: "En progreso",
+      color: "#d7ca1c",
+      wipLimit: 3,
+    },
+    {
+      name: "En revision",
+      color: "#4786ff",
+      wipLimit: 2,
+    },
+    {
+      name: "Completadas",
+      color: "#35d446",
+      wipLimit: 999,
+    },
+  ];
+
   protected boardName(name?: string) {
     return name?.trim() || "Tablero Kanban";
   }
 
-  protected createColumns(boardId: string): BoardColumn[] {
-    return [
-      {
+  protected createColumns(
+    boardId: string,
+    columnDrafts?: BoardColumnDraftInput[],
+  ): BoardColumn[] {
+    const sourceColumns =
+      columnDrafts && columnDrafts.length > 0 ? columnDrafts : this.defaultColumns;
+
+    return sourceColumns.map((column, index) => {
+      const fallback = this.defaultColumns[index % this.defaultColumns.length];
+
+      return {
         id: crypto.randomUUID(),
         boardId,
-        name: "Por hacer",
-        order: 1,
-        color: "#b8c2d4",
-        wipLimit: 4,
-      },
-      {
-        id: crypto.randomUUID(),
-        boardId,
-        name: "En progreso",
-        order: 2,
-        color: "#d7ca1c",
-        wipLimit: 3,
-      },
-      {
-        id: crypto.randomUUID(),
-        boardId,
-        name: "En revision",
-        order: 3,
-        color: "#4786ff",
-        wipLimit: 2,
-      },
-      {
-        id: crypto.randomUUID(),
-        boardId,
-        name: "Completadas",
-        order: 4,
-        color: "#35d446",
-        wipLimit: 999,
-      },
-    ];
+        name: column.name.trim(),
+        order: index + 1,
+        color: column.color ?? fallback.color,
+        wipLimit: column.wipLimit ?? fallback.wipLimit,
+      };
+    });
   }
 }
 
 export function createBoardFactory() {
   return new DefaultKanbanBoardFactory();
+}
+
+export function getDefaultBoardColumnDrafts(): BoardColumnDraftInput[] {
+  return createBoardFactory()
+    .create("board-draft")
+    .columns.map((column) => ({
+      name: column.name,
+      color: column.color,
+      wipLimit: column.wipLimit,
+    }));
 }

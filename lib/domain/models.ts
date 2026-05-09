@@ -108,6 +108,12 @@ export interface BoardColumn {
   wipLimit?: number;
 }
 
+export interface BoardColumnDraftInput {
+  name: string;
+  color?: string;
+  wipLimit?: number;
+}
+
 export interface Board {
   id: string;
   projectId: string;
@@ -168,6 +174,43 @@ export interface CreateProjectResult {
   board: Board;
 }
 
+export interface ProjectCloneColumnBlueprint {
+  name: string;
+  order: number;
+  color: string;
+  wipLimit?: number;
+}
+
+export interface ProjectCloneBoardBlueprint {
+  name: string;
+  columns: ProjectCloneColumnBlueprint[];
+}
+
+export interface CloneProjectRequestInput {
+  sourceProjectId: string;
+  actorId: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface CloneProjectInput {
+  sourceProjectId: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  state: ProjectState;
+  boards: ProjectCloneBoardBlueprint[];
+}
+
+export interface CloneProjectResult {
+  project: Project;
+  boards: Board[];
+}
+
 export interface UpdateProjectInput {
   projectId: string;
   name: string;
@@ -181,6 +224,32 @@ export interface UpdateProjectInput {
 export interface CreateBoardInput {
   projectId: string;
   name: string;
+  columns?: BoardColumnDraftInput[];
+}
+
+export interface CreateBoardColumnInput {
+  projectId: string;
+  boardId: string;
+  name: string;
+}
+
+export interface UpdateBoardColumnInput {
+  projectId: string;
+  boardId: string;
+  columnId: string;
+  name: string;
+}
+
+export interface ReorderBoardColumnsInput {
+  projectId: string;
+  boardId: string;
+  orderedColumnIds: string[];
+}
+
+export interface DeleteBoardColumnInput {
+  projectId: string;
+  boardId: string;
+  columnId: string;
 }
 
 export interface CreateTaskInput {
@@ -194,6 +263,7 @@ export interface CreateTaskInput {
   type: TaskType;
   dueDate: string;
   estimateHours: number;
+  spentHours?: number;
   assigneeIds?: string[];
   subtasks?: TaskSubtaskInput[];
 }
@@ -241,6 +311,7 @@ export interface UpdateTaskInput {
   type: TaskType;
   dueDate: string;
   estimateHours: number;
+  spentHours: number;
   assigneeIds: string[];
   subtasks: TaskSubtaskInput[];
 }

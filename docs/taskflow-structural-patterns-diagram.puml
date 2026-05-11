@@ -1,0 +1,138 @@
+@startuml
+title Taskflow - Patrones Estructurales
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+hide empty members
+
+legend right
+  Diagrama simplificado.
+  Solo muestra clases, interfaces,
+  estereotipos y relaciones.
+endlegend
+
+package "Domain" {
+  interface IRepositroyFlow <<Port>>
+  class UserProfile <<Entity>>
+  class Project <<Entity>>
+  class Task <<Entity>>
+  class Subtask <<Entity>>
+  class TaskflowSnapshot <<Entity>>
+  class ProjectNotificationEvent <<Event>>
+  class CreateProjectNotificationInput <<DTO>>
+  class BoardTaskView <<ViewModel>>
+  class ProjectAccessPolicy <<Policy>>
+}
+
+package "Facade" {
+  class TaskflowService <<Facade>>
+  class ProjectCommandService
+  class BoardCommandService
+  class TaskCommandService
+  class TaskUpdateService
+  class TaskCloneService
+  class InvitationCommandService
+  class NotificationCommandService
+  class ReportQueryService
+}
+
+package "Composite" {
+  interface WorkItemComponent <<Composite>>
+  class TaskComposite <<Composite>>
+  class SubtaskLeaf <<Leaf>>
+}
+
+package "Decorator" {
+  class BoardTaskDecorator <<Decorator>>
+}
+
+package "Proxy" {
+  class RouteAuthorizationProxy <<Proxy>>
+  class "lib/api/route-authorization.ts" as RouteAuthorization <<RouteGuard>>
+  class "app/api/projects/.../tasks/route.ts" as TaskRoute <<RouteHandler>>
+}
+
+package "Adapter" {
+  class SupabaseTaskflowRepository <<Adapter>>
+  class MockTaskflowRepository <<Adapter>>
+  class NotificationEventAdapter <<Adapter>>
+  interface NotificationComposer <<Adaptee>>
+  class ProjectNotificationSubscriber <<Client>>
+}
+
+package "Bridge" {
+  class ReportQueryService <<BridgeAbstraction>>
+  interface ReportRenderer <<BridgeImplementor>>
+  class HtmlReportRenderer <<ConcreteImplementor>>
+  class CsvReportRenderer <<ConcreteImplementor>>
+  class JsonReportRenderer <<ConcreteImplementor>>
+  class ReportDocument <<DTO>>
+  class WorkspaceReportView <<ViewModel>>
+  class RenderedReport <<DTO>>
+  class "app/(workspace)/reports/page.tsx" as ReportsPage <<Page>>
+  class "app/api/reports/route.ts" as ReportsApi <<RouteHandler>>
+}
+
+' Facade
+TaskflowService o--> ProjectCommandService
+TaskflowService o--> BoardCommandService
+TaskflowService o--> TaskCommandService
+TaskflowService o--> TaskUpdateService
+TaskflowService o--> TaskCloneService
+TaskflowService o--> InvitationCommandService
+TaskflowService o--> NotificationCommandService
+TaskflowService o--> ReportQueryService
+TaskflowService ..> IRepositroyFlow
+
+' Composite
+TaskComposite ..|> WorkItemComponent
+SubtaskLeaf ..|> WorkItemComponent
+TaskComposite *-- WorkItemComponent
+TaskComposite o--> Task
+SubtaskLeaf o--> Subtask
+Task *-- Subtask
+
+' Decorator
+BoardTaskDecorator o--> Task
+BoardTaskDecorator o--> TaskflowSnapshot
+BoardTaskDecorator ..> TaskComposite
+BoardTaskDecorator ..> BoardTaskView
+BoardTaskView --|> Task
+
+' Proxy
+TaskRoute ..> RouteAuthorization
+RouteAuthorization ..> RouteAuthorizationProxy
+RouteAuthorizationProxy o--> ProjectAccessPolicy
+RouteAuthorizationProxy ..> UserProfile
+RouteAuthorizationProxy ..> Project
+
+' Adapter
+SupabaseTaskflowRepository ..|> IRepositroyFlow
+MockTaskflowRepository ..|> IRepositroyFlow
+NotificationEventAdapter ..> NotificationComposer
+NotificationEventAdapter ..> ProjectNotificationEvent
+NotificationEventAdapter ..> CreateProjectNotificationInput
+ProjectNotificationSubscriber o--> NotificationEventAdapter
+ProjectNotificationSubscriber ..> IRepositroyFlow
+
+' Bridge
+ReportQueryService ..> IRepositroyFlow
+ReportQueryService ..> ReportRenderer
+ReportQueryService ..> ReportDocument
+ReportQueryService ..> WorkspaceReportView
+ReportQueryService ..> RenderedReport
+HtmlReportRenderer ..|> ReportRenderer
+CsvReportRenderer ..|> ReportRenderer
+JsonReportRenderer ..|> ReportRenderer
+ReportRenderer ..> ReportDocument
+ReportsPage ..> TaskflowService
+ReportsApi ..> TaskflowService
+
+' Cross-pattern flow
+TaskRoute ..> TaskflowService
+TaskCommandService ..> IRepositroyFlow
+TaskCommandService ..> ProjectNotificationSubscriber
+
+@enduml

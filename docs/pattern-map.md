@@ -70,6 +70,10 @@ El diagrama mas completo para sustentar relaciones entre entidades, capas y patr
 
 - `docs/taskflow-patterns-complete-diagram.puml`
 
+Para exponer unicamente los patrones estructurales, usa:
+
+- `docs/taskflow-structural-patterns-diagram.puml`
+
 Este archivo muestra:
 
 - entidades principales del dominio,
@@ -79,6 +83,13 @@ Este archivo muestra:
 - clases concretas donde se implementan los patrones,
 - flujos de notificacion, autorizacion, decoracion de tareas y reportes,
 - notas de defensa para `Facade`, `Composite`, `Decorator`, `Proxy`, `Adapter`, `Bridge` y `Observer`.
+
+## Artefactos complementarios de entrega
+
+- Tabla de control de cambios de artefactos: `docs/change-control.md`
+- Tabla de control de cambios en codigo: `docs/code-change-control.md`
+- Guia tecnica de patrones: `docs/design-patterns-guide.md`
+- Referencia de clases por patron: `docs/pattern-class-reference.md`
 
 ## Reglas de sustentacion
 

@@ -32,23 +32,8 @@ export class SupabaseTaskCommand {
     }
 
     const draftTask = this.buildDraftTask(input, targetColumnId);
-    const { data: taskRow, error: taskError } = await this.client.rpc(
-      "create_project_task_with_notifications",
-      {
-        target_project_id: draftTask.projectId,
-        target_board_id: draftTask.boardId,
-        target_column_id: draftTask.columnId,
-        target_title: draftTask.title,
-        target_description: draftTask.description,
-        target_priority: draftTask.priority,
-        target_type: draftTask.type,
-        target_due_date: draftTask.dueDate,
-        target_estimate_hours: draftTask.estimateHours,
-        target_spent_hours: draftTask.spentHours,
-        target_assignee_ids: draftTask.assigneeIds,
-        target_subtasks: this.serializeSubtasks(input.subtasks ?? []),
-      },
-    );
+    const { data: taskRow, error: taskError } =
+      await this.createTaskWithCompatibleRpc(draftTask, input);
 
     if (taskError || !taskRow) {
       throw new Error(taskError?.message ?? "No fue posible crear la tarea.");
@@ -236,6 +221,67 @@ export class SupabaseTaskCommand {
     }
 
     return builder.build();
+  }
+
+  private async createTaskWithCompatibleRpc(
+    draftTask: Task,
+    input: CreateTaskInput,
+  ) {
+    const currentArgs = {
+      target_project_id: draftTask.projectId,
+      target_board_id: draftTask.boardId,
+      target_column_id: draftTask.columnId,
+      target_title: draftTask.title,
+      target_description: draftTask.description,
+      target_priority: draftTask.priority,
+      target_type: draftTask.type,
+      target_due_date: draftTask.dueDate,
+      target_estimate_hours: draftTask.estimateHours,
+      target_spent_hours: draftTask.spentHours,
+      target_assignee_ids: draftTask.assigneeIds,
+      target_subtasks: this.serializeSubtasks(input.subtasks ?? []),
+    };
+
+    const currentResult = await this.client.rpc(
+      "create_project_task_with_notifications",
+      currentArgs,
+    );
+
+    if (!this.isMissingCreateTaskRpcSignature(currentResult.error)) {
+      return currentResult;
+    }
+
+    // Compatibility path for Supabase projects that still expose the previous
+    // RPC signature. The database migration remains the source of truth.
+    return this.client.rpc("create_project_task_with_notifications", {
+      target_project_id: currentArgs.target_project_id,
+      target_board_id: currentArgs.target_board_id,
+      target_column_id: currentArgs.target_column_id,
+      target_title: currentArgs.target_title,
+      target_description: currentArgs.target_description,
+      target_priority: currentArgs.target_priority,
+      target_type: currentArgs.target_type,
+      target_due_date: currentArgs.target_due_date,
+      target_estimate_hours: currentArgs.target_estimate_hours,
+      target_assignee_ids: currentArgs.target_assignee_ids,
+      target_subtasks: currentArgs.target_subtasks,
+    });
+  }
+
+  private isMissingCreateTaskRpcSignature(
+    error: { code?: string; message?: string } | null,
+  ) {
+    if (!error) {
+      return false;
+    }
+
+    const message = error.message?.toLowerCase() ?? "";
+
+    return (
+      error.code === "PGRST202" ||
+      (message.includes("create_project_task_with_notifications") &&
+        message.includes("schema cache"))
+    );
   }
 
   private serializeSubtasks(subtasks: TaskSubtaskInput[]) {

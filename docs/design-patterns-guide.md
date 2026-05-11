@@ -607,6 +607,7 @@ Los patrones no viven aislados. En esta app se encadenan:
 ## Referencias rapidas de codigo
 
 - Mapa formal de patrones: `docs/pattern-map.md`
+- Tabla de control de cambios: `docs/change-control.md`
 - Resumen corto: `docs/pattern-traceability.md`
 - Referencia de clases: `docs/pattern-class-reference.md`
 - Diagrama completo enfocado en patrones: `docs/taskflow-patterns-complete-diagram.puml`

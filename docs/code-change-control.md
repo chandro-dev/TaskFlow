@@ -1,0 +1,51 @@
+# Tabla de Control de Cambios en el Codigo
+
+## Alcance
+
+Esta tabla resume los principales problemas identificados en la version preliminar del codigo de Taskflow y las mejoras aplicadas para hacer la aplicacion mas mantenible, extensible y alineada con los patrones de diseno trabajados.
+
+El enfoque no es listar cada commit, sino explicar los cambios relevantes sobre funcionalidades, arquitectura y calidad interna del codigo.
+
+## Tabla principal
+
+| No. | Problema identificado | Funcionalidad o modulo afectado | Efectos o consecuencias | Cambio o mejora aplicada | Resultado obtenido | Evidencia en codigo |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Las rutas y paginas podian quedar demasiado acopladas a multiples servicios internos. | Capa de aplicacion, rutas API y paginas del workspace. | Dificultad para mantener rutas, duplicacion de orquestacion y mayor dependencia entre Next.js y la logica del negocio. | Se consolido `TaskflowService` como fachada principal para exponer casos de uso de alto nivel. | Las rutas llaman metodos simples y la logica queda distribuida en servicios especializados. | `lib/application/taskflow-service.ts`, `lib/application/application-service-factory.ts`. |
+| 2 | La aplicacion necesitaba alternar entre Supabase y un modo mock sin cambiar la logica de negocio. | Persistencia, desarrollo local y pruebas manuales. | Dependencia directa del proveedor de datos y dificultad para ejecutar la app sin credenciales. | Se definio el puerto `IRepositroyFlow` y adaptadores concretos para Supabase y mock. | La aplicacion depende de un contrato, no del SDK de Supabase. El fallback mock permite demo y desarrollo local. | `lib/domain/repositories.ts`, `lib/infrastructure/supabase/supabase-repository.ts`, `lib/infrastructure/mock/mock-repository.ts`, `lib/infrastructure/repository-factory.ts`. |
+| 3 | El estado mock podia perder consistencia si cada operacion manejaba datos aislados. | Repositorio mock y datos de demo. | Resultados inconsistentes entre operaciones y dificultad para simular flujos reales. | Se uso `MockTaskflowStore` como store unico en memoria. | Las operaciones mock comparten el mismo snapshot durante la ejecucion. | `lib/infrastructure/mock/mock-store.ts`. |
+| 4 | La creacion de tareas mezclaba reglas de tipo, prioridad, responsables, subtareas e historial. | Gestion de tareas. | Codigo dificil de extender cuando se agregan nuevos tipos de tarea o nuevas reglas de construccion. | Se separo la creacion base por `Factory Method` y el armado final mediante `TaskBuilder`. | Crear nuevos tipos de tarea o enriquecerlas es mas controlado y menos invasivo. | `lib/patterns/factory/task-factory.ts`, `lib/patterns/builder/task-builder.ts`, `lib/infrastructure/supabase/supabase-task-command.ts`, `lib/infrastructure/mock/mock-store.ts`. |
+| 5 | La edicion de tareas podia convertirse en una mutacion dispersa de campos y subtareas. | Actualizacion de tareas. | Riesgo de inconsistencias al editar responsables, subtareas, horas y datos centrales. | Se agrego `TaskUpdateBuilder` para reconstruir la tarea editada con reglas claras. | La actualizacion queda centralizada y mas facil de validar. | `lib/patterns/builder/task-update-builder.ts`, `lib/application/tasks/task-update-service.ts`. |
+| 6 | El clonado de tareas, subtareas, proyectos e invitaciones podia duplicar codigo manualmente. | Clonado de proyectos, tareas e invitaciones. | Mayor probabilidad de copiar campos que no debian heredarse, como historial o datos operativos. | Se implementaron prototypes para clonar entidades con overrides controlados. | El clonado conserva estructura util y limpia datos que no deben propagarse. | `lib/patterns/prototype/clone.ts`, `lib/patterns/prototype/invitation-prototype.ts`, `lib/application/tasks/task-clone-service.ts`, `lib/application/projects/project-clone-service.ts`. |
+| 7 | Las acciones de proyecto, tablero, tarea e invitacion podian acoplarse directamente a la creacion de notificaciones. | Sistema de notificaciones. | Los comandos tendrian que conocer destinatarios, textos y persistencia de notificaciones. | Se introdujo `ProjectEventPublisher` y `ProjectNotificationSubscriber`. | Los comandos publican eventos y las notificaciones se generan como efecto secundario desacoplado. | `lib/patterns/observer/project-event-publisher.ts`, `lib/application/notifications/project-notification-subscriber.ts`, `lib/application/tasks/task-command-service.ts`. |
+| 8 | La traduccion de eventos de dominio a notificaciones persistibles estaba mezclada con el subscriber. | Notificaciones. | Menor claridad sobre que parte observa eventos y que parte adapta datos. | Se creo `NotificationEventAdapter` para convertir eventos en `CreateProjectNotificationInput`. | El subscriber queda mas limpio y el adapter concentra la traduccion. | `lib/patterns/structural/adapter/notification-event-adapter.ts`, `lib/application/notifications/project-notification-subscriber.ts`. |
+| 9 | El calculo de progreso de subtareas estaba acoplado a mappers de pantalla. | Tablero Kanban y tarjetas de tarea. | La regla de progreso no era reutilizable y podia duplicarse si aparecian nuevos componentes. | Se implemento `TaskComposite` y `SubtaskLeaf` para representar tarea/subtareas como una estructura compuesta. | El progreso se calcula desde una estructura reutilizable y alineada con Composite. | `lib/patterns/structural/composite/task-work-item.ts`, `lib/application/shared/workspace-mappers.ts`. |
+| 10 | La tarjeta Kanban mezclaba datos base de tarea con datos calculados para presentacion. | UI de tablero y tarjetas. | Mayor acoplamiento entre dominio y visualizacion. | Se agrego `BoardTaskDecorator` para enriquecer la tarea con responsables, vencimiento y progreso. | La entidad `Task` se mantiene limpia y la UI consume `BoardTaskView`. | `lib/patterns/structural/decorator/board-task-decorator.ts`, `components/taskflow/task-card.tsx`. |
+| 11 | Las validaciones de permisos podian repetirse en muchas rutas. | Seguridad de rutas API. | Riesgo de reglas inconsistentes entre endpoints de proyectos, tableros, tareas e invitaciones. | Se centralizo la autorizacion en `RouteAuthorizationProxy` y helpers de ruta. | Las rutas delegan la validacion de rol, sesion y pertenencia a un unico punto. | `lib/patterns/structural/proxy/route-authorization-proxy.ts`, `lib/api/route-authorization.ts`, `app/api/projects/*`. |
+| 12 | Los reportes no tenian una separacion clara entre datos calculados y formato de salida. | Reportes. | Agregar CSV, HTML o JSON podia duplicar logica de calculo. | Se implemento `ReportQueryService` con renderers intercambiables mediante Bridge. | El mismo reporte puede exportarse en HTML, CSV y JSON sin cambiar el caso de uso. | `lib/application/reports/report-query-service.ts`, `lib/patterns/structural/bridge/report-renderer.ts`, `app/(workspace)/reports/page.tsx`, `app/api/reports/route.ts`. |
+| 13 | La configuracion visual podia quedar repartida entre componentes. | Tema claro/oscuro y configuracion del sistema. | Cambios visuales inconsistentes y dificil mantenimiento de tokens. | Se uso `Abstract Factory` para crear familias de tokens visuales y `ThemeSingleton` para sincronizar el tema. | La experiencia visual es consistente y extensible. | `lib/patterns/abstract-factory/theme-factory.ts`, `lib/patterns/singleton/theme-singleton.ts`, `components/taskflow/theme-toggle.tsx`, `components/taskflow/settings-form.tsx`. |
+| 14 | Las operaciones de tableros necesitaban soportar columnas configurables sin duplicar reglas. | Gestion de tableros y columnas. | Crear tableros con distintas columnas podia volver rigido el flujo. | Se extendio la fabrica de tableros y los servicios de comandos para crear, actualizar, reordenar y eliminar columnas. | El tablero Kanban es configurable y mas cercano a un uso real. | `lib/patterns/factory/board-factory.ts`, `lib/application/boards/board-command-service.ts`, `app/api/projects/[projectId]/boards/[boardId]/columns/*`. |
+| 15 | El dominio de tareas no registraba claramente horas ejecutadas frente a horas estimadas. | Tareas y reportes. | Los reportes no podian comparar estimacion contra esfuerzo real. | Se agrego `spentHours` al modelo, formularios, comandos y migraciones. | La aplicacion permite reportar horas estimadas vs horas trabajadas. | `lib/domain/models.ts`, `components/taskflow/task-creation-form.tsx`, `prisma/migrations/20260412183000_task_spent_hours_tracking`, `supabase/migrations/20260412183000_task_spent_hours_tracking.sql`. |
+| 16 | La documentacion de patrones no estaba conectada suficientemente con clases reales. | Sustentacion y trazabilidad tecnica. | Dificultad para defender que los patrones estaban implementados y no solo mencionados. | Se agregaron mapas, referencias de clases y diagramas PlantUML enfocados en patrones. | La evidencia de implementacion queda rastreable desde documentos hacia codigo. | `docs/pattern-map.md`, `docs/pattern-class-reference.md`, `docs/taskflow-patterns-complete-diagram.puml`, `docs/taskflow-structural-patterns-diagram.puml`. |
+
+## Resumen de mejoras aplicadas
+
+Los cambios de codigo se concentraron en cuatro objetivos:
+
+1. Reducir acoplamiento entre rutas, servicios, dominio e infraestructura.
+2. Hacer mas clara la creacion, actualizacion y clonado de entidades.
+3. Separar reglas de negocio, adaptacion de datos, autorizacion y presentacion.
+4. Dejar evidencia tecnica suficiente para sustentar patrones creacionales y estructurales.
+
+## Estado despues de los cambios
+
+| Aspecto | Resultado |
+| --- | --- |
+| Compilacion | La aplicacion compila con `npm run build`. |
+| Calidad estatica | ESLint pasa con `npm run lint`. |
+| Arquitectura | Queda separada en dominio, aplicacion, infraestructura, patrones y presentacion. |
+| Patrones | Los patrones estan implementados en clases concretas y documentados con trazabilidad. |
+| Funcionalidad | La app cubre usuarios, proyectos, tableros, tareas, notificaciones, filtros, reportes y configuracion. |
+
+## Nota para la entrega
+
+Esta tabla corresponde a la "Tabla Control de Cambios en el Codigo" solicitada en la Etapa 2. Debe presentarse separada de `docs/change-control.md`, que corresponde al control de cambios de artefactos documentales y de diseno.

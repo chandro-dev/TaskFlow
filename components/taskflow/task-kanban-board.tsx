@@ -6,6 +6,7 @@ import { TaskCard } from "@/components/taskflow/task-card";
 import { TaskCloneModal } from "@/components/taskflow/task-clone-modal";
 import { TaskDeleteButton } from "@/components/taskflow/task-delete-button";
 import { TaskEditorModal } from "@/components/taskflow/task-editor-modal";
+import { UndoRedoBar } from "@/components/taskflow/undo-redo-bar";
 import type { BoardColumnView, UserProfile } from "@/lib/domain/models";
 
 type MoveStatus = {
@@ -122,6 +123,7 @@ export function TaskKanbanBoard({
 
     try {
       await persistMove(draggedTaskId, targetColumnId);
+      window.dispatchEvent(new CustomEvent("taskflow-action"));
       startTransition(() => router.refresh());
     } catch (moveError) {
       setColumns(previousColumns);
@@ -253,6 +255,15 @@ export function TaskKanbanBoard({
           );
         })}
       </div>
+
+      <UndoRedoBar
+        onUndoRedo={() => {
+          startTransition(() => {
+            router.refresh();
+          });
+          window.dispatchEvent(new CustomEvent("taskflow-action"));
+        }}
+      />
     </div>
   );
 }

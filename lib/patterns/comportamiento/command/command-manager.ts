@@ -2,18 +2,19 @@ import type { Command } from "./command";
 
 // Pattern traceability: Command Invoker / History Manager
 export class CommandManager {
-  private static instance: CommandManager | null = null;
   private undoStack: Command[] = [];
   private redoStack: Command[] = [];
   private readonly maxHistory = 20;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): CommandManager {
-    if (!CommandManager.instance) {
-      CommandManager.instance = new CommandManager();
+    // Use globalThis to persist the singleton across compile boundaries/hot-reloads in Next.js.
+    const globalManager = globalThis as any;
+    if (!globalManager.commandManagerInstance) {
+      globalManager.commandManagerInstance = new CommandManager();
     }
-    return CommandManager.instance;
+    return globalManager.commandManagerInstance;
   }
 
   async executeCommand(command: Command): Promise<void> {

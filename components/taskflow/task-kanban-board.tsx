@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TaskCard } from "@/components/taskflow/task-card";
 import { TaskCloneModal } from "@/components/taskflow/task-clone-modal";
@@ -70,8 +70,32 @@ export function TaskKanbanBoard({
   const [moveStatus, setMoveStatus] = useState<MoveStatus>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Limpia el historial de comandos cuando el usuario abandona el board.
+  // El cleanup de useEffect se ejecuta al desmontar el componente.
   useEffect(() => {
-    setColumns(initialColumns);
+    return () => {
+      // fire-and-forget: no necesitamos await aquí
+      fetch("/api/tasks/history", { method: "DELETE" }).catch(() => {
+        // silenciar errores de red al desmontar
+      });
+    };
+  }, []); // sin dependencias → solo corre el cleanup al desmontar
+
+  // Contador de generación: se incrementa cada vez que arranca un move
+  // optimista. El useEffect captura el valor en ese instante y solo aplica
+  // initialColumns si no ha habido ningún move nuevo desde entonces.
+  // Esto evita que datos stale del servidor (llegados antes de que el
+  // router.refresh() traiga la versión correcta) sobreescriban la UI.
+  const moveGenRef = useRef(0);
+
+  useEffect(() => {
+    // Capturamos la generación vigente en el momento en que este efecto corre.
+    // Si para cuando el servidor responde ya hay otra generación (otro move
+    // arrancó), no tocamos el estado local.
+    const capturedGen = moveGenRef.current;
+    if (capturedGen === 0) {
+      setColumns(initialColumns);
+    }
   }, [initialColumns]);
 
   const isMovingTask = useMemo(
@@ -116,6 +140,12 @@ export function TaskKanbanBoard({
       targetColumnId,
     );
 
+    // Incrementamos la generación ANTES del update optimista para que el
+    // useEffect ignore cualquier initialColumns stale que llegue del servidor
+    // mientras el move está en vuelo.
+    moveGenRef.current += 1;
+    const currentGen = moveGenRef.current;
+
     setColumns(nextColumns);
     setMoveStatus({ taskId: draggedTaskId, toColumnId: targetColumnId });
     setDropColumnId(null);
@@ -124,8 +154,18 @@ export function TaskKanbanBoard({
     try {
       await persistMove(draggedTaskId, targetColumnId);
       window.dispatchEvent(new CustomEvent("taskflow-action"));
-      startTransition(() => router.refresh());
+      startTransition(() => {
+        // Bajamos la generación a 0 justo antes del refresh para que cuando
+        // lleguen los initialColumns frescos del servidor el useEffect los
+        // aplique normalmente (capturedGen === 0).
+        if (moveGenRef.current === currentGen) {
+          moveGenRef.current = 0;
+        }
+        router.refresh();
+      });
     } catch (moveError) {
+      // En caso de error volvemos a 0 y restauramos el estado anterior.
+      moveGenRef.current = 0;
       setColumns(previousColumns);
       setError(
         moveError instanceof Error

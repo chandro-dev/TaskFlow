@@ -1,4 +1,4 @@
-import type { Command } from "./command";
+import type { Command } from "@/lib/patterns/comportamiento/command/command";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import type { MoveTaskInput, Task } from "@/lib/domain/models";
 
@@ -19,16 +19,20 @@ export class MoveTaskCommand implements Command {
   }
 
   async execute(): Promise<void> {
-    // If we don't have the previous column or task title yet, load snapshot to find them
-    if (!this.previousColumnId) {
-      const snapshot = await this.repository.loadSnapshot();
-      const task = snapshot.tasks.find((t) => t.id === this.input.taskId);
-      if (task) {
-        this.previousColumnId = task.columnId;
-        this.taskTitle = task.title;
-      } else {
-        throw new Error("No se pudo encontrar la tarea a mover.");
-      }
+    // Siempre cargamos el snapshot para capturar el columnId actual de la tarea.
+    // Esto es necesario para que undo funcione correctamente después de un redo,
+    // ya que en ese caso execute() se llama de nuevo con un previousColumnId viejo.
+    const snapshot = await this.repository.loadSnapshot();
+    const task = snapshot.tasks.find((t) => t.id === this.input.taskId);
+
+    if (!task) {
+      throw new Error("No se pudo encontrar la tarea a mover.");
+    }
+
+    this.previousColumnId = task.columnId;
+
+    if (!this.taskTitle) {
+      this.taskTitle = task.title;
     }
 
     this.result = await this.repository.moveTask({

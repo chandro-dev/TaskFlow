@@ -2,6 +2,8 @@ import { TaskflowService } from "@/lib/application/taskflow-service";
 import { requireProjectMemberRouteUser } from "@/lib/api/route-authorization";
 import { buildRouteErrorResponse } from "@/lib/api/route-errors";
 
+export const dynamic = "force-dynamic";
+
 const service = new TaskflowService();
 
 export async function PATCH(

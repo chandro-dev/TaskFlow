@@ -8,6 +8,10 @@ import { TaskflowService } from "@/lib/application/taskflow-service";
 import { requireAuthenticatedUser } from "@/lib/auth/current-user";
 import type { TaskFilters, TaskPriority, TaskType } from "@/lib/domain/models";
 
+// Sin esta directiva, Next.js cachea el Server Component y router.refresh()
+// devuelve datos stale que sobreescriben el estado optimista del kanban.
+export const dynamic = "force-dynamic";
+
 const service = new TaskflowService();
 
 function readParam(value: string | string[] | undefined, fallback = "") {

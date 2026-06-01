@@ -52,11 +52,13 @@ export class MockTaskflowStore {
     // Pattern traceability: Singleton.
     // The mock store behaves like one shared in-memory database during local
     // execution so all requests observe the same evolving snapshot.
-    if (!this.instance) {
-      this.instance = new MockTaskflowStore();
+    // Use globalThis to persist the singleton across compile boundaries/hot-reloads in Next.js.
+    const globalStore = globalThis as any;
+    if (!globalStore.mockTaskflowStoreInstance) {
+      globalStore.mockTaskflowStoreInstance = new MockTaskflowStore();
     }
 
-    return this.instance;
+    return globalStore.mockTaskflowStoreInstance;
   }
 
   loadSnapshot() {

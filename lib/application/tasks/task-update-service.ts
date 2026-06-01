@@ -1,4 +1,5 @@
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
+import { assertColumnWipCapacity } from "@/lib/application/tasks/wip-limit-guard";
 import type { UpdateTaskInput } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { TaskUpdateBuilder } from "@/lib/patterns/builder/task-update-builder";
@@ -54,6 +55,12 @@ export class TaskUpdateService {
     if (normalizedSubtasks.some((subtask) => !subtask.title)) {
       throw new Error("Todas las subtareas deben tener un titulo.");
     }
+
+    assertColumnWipCapacity(snapshot, {
+      boardId: input.boardId,
+      columnId: input.columnId.trim(),
+      ignoredTaskId: input.taskId,
+    });
 
     // The builder concentrates the task editing rules so the service only
     // orchestrates validation and persistence, not field-by-field mutation.

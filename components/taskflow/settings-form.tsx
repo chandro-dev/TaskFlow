@@ -77,26 +77,64 @@ export function SettingsForm({
     <form onSubmit={onSubmit} className="space-y-5">
       {canManageSystemSettings ? (
         <>
-          <input
-            value={form.platformName}
-            onChange={(event) => updateField("platformName", event.target.value)}
-            className="taskflow-input"
-            required
-          />
-          <input
-            type="number"
-            min="1"
-            value={form.maxAttachmentMb}
-            onChange={(event) => updateField("maxAttachmentMb", event.target.value)}
-            className="taskflow-input"
-            required
-          />
-          <textarea
-            value={form.passwordPolicy}
-            onChange={(event) => updateField("passwordPolicy", event.target.value)}
-            className="taskflow-input min-h-28 resize-none"
-            required
-          />
+          <div className="space-y-2">
+            <label
+              htmlFor="platformName"
+              className="text-sm font-medium text-[color:var(--color-text-secondary)]"
+            >
+              Nombre de plataforma
+            </label>
+            <input
+              id="platformName"
+              value={form.platformName}
+              onChange={(event) => updateField("platformName", event.target.value)}
+              className="taskflow-input"
+              required
+            />
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-[1fr_1.4fr]">
+            <div className="space-y-2">
+              <label
+                htmlFor="maxAttachmentMb"
+                className="text-sm font-medium text-[color:var(--color-text-secondary)]"
+              >
+                Limite de adjuntos
+              </label>
+              <div className="relative">
+                <input
+                  id="maxAttachmentMb"
+                  type="number"
+                  min="1"
+                  value={form.maxAttachmentMb}
+                  onChange={(event) =>
+                    updateField("maxAttachmentMb", event.target.value)
+                  }
+                  className="taskflow-input pr-14"
+                  required
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[color:var(--color-text-secondary)]">
+                  MB
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="passwordPolicy"
+                className="text-sm font-medium text-[color:var(--color-text-secondary)]"
+              >
+                Politica de contrasenas
+              </label>
+              <textarea
+                id="passwordPolicy"
+                value={form.passwordPolicy}
+                onChange={(event) => updateField("passwordPolicy", event.target.value)}
+                className="taskflow-input min-h-28 resize-none"
+                required
+              />
+            </div>
+          </div>
         </>
       ) : (
         <div className="rounded-2xl bg-[color:var(--color-surface-muted)] px-4 py-3 text-sm leading-7 text-[color:var(--color-text-secondary)]">
@@ -105,15 +143,26 @@ export function SettingsForm({
         </div>
       )}
 
-      <select
-        value={form.defaultTheme}
-        onChange={(event) => updateField("defaultTheme", event.target.value as ThemeMode)}
-        className="taskflow-input"
-      >
-        <option value="system">Sistema</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
+      <div className="space-y-2">
+        <label
+          htmlFor="defaultTheme"
+          className="text-sm font-medium text-[color:var(--color-text-secondary)]"
+        >
+          Tema personal
+        </label>
+        <select
+          id="defaultTheme"
+          value={form.defaultTheme}
+          onChange={(event) =>
+            updateField("defaultTheme", event.target.value as ThemeMode)
+          }
+          className="taskflow-input"
+        >
+          <option value="system">Sistema</option>
+          <option value="light">Claro</option>
+          <option value="dark">Oscuro</option>
+        </select>
+      </div>
 
       {error ? (
         <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">

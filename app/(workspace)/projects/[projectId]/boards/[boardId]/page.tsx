@@ -67,14 +67,7 @@ export default async function BoardPage({
   }
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
-  const currentMembership = data.projectMembers.find(
-    (member) => member.user.id === data.currentUser.id,
-  );
-  const canManageMembers =
-    data.currentUser.role === "ADMIN" ||
-    data.project.ownerId === data.currentUser.id ||
-    currentMembership?.memberRole === "PROJECT_MANAGER";
-  const canManageColumns = canManageMembers;
+  const { permissions } = data;
 
   return (
     <div className="space-y-8">
@@ -90,7 +83,13 @@ export default async function BoardPage({
             Gestion de columnas, WIP, tipos de tarea, responsables, etiquetas y
             filtros avanzados sobre el proyecto activo.
           </p>
-          {canManageMembers ? (
+          <div className="mt-3 flex flex-wrap gap-3">
+            <span className="taskflow-chip">{permissions.accessLabel}</span>
+            {permissions.isReadOnly ? (
+              <span className="taskflow-chip">Solo lectura</span>
+            ) : null}
+          </div>
+          {permissions.canManageMembers ? (
             <p className="mt-3 text-sm font-medium text-[color:var(--color-accent)]">
               Puedes gestionar miembros, cambiar privilegios del proyecto y revocar
               acceso desde este tablero.
@@ -100,27 +99,29 @@ export default async function BoardPage({
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="taskflow-chip">{activeFilterCount} filtros activos</div>
-          {canManageMembers ? (
+          {permissions.canManageMembers ? (
             <BoardMemberManagerModal
               projectId={data.project.id}
               projectName={data.project.name}
               projectMembers={data.projectMembers}
-              canManageMembers={canManageMembers}
+              canManageMembers={permissions.canManageMembers}
             />
           ) : null}
-          {canManageColumns ? (
+          {permissions.canManageColumns ? (
             <BoardColumnManagerModal
               projectId={data.project.id}
               boardId={data.board.id}
               columns={data.columns}
             />
           ) : null}
-          <TaskCreator
-            projectId={data.project.id}
-            boardId={data.board.id}
-            columns={data.board.columns}
-            users={data.users}
-          />
+          {permissions.canCreateTask ? (
+            <TaskCreator
+              projectId={data.project.id}
+              boardId={data.board.id}
+              columns={data.board.columns}
+              users={data.users}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -212,6 +213,7 @@ export default async function BoardPage({
         boardId={data.board.id}
         initialColumns={data.columns}
         users={data.users}
+        permissions={permissions}
       />
     </div>
   );

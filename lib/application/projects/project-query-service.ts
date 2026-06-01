@@ -5,6 +5,7 @@ import type {
 } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
+import { ProjectAccessPolicy } from "@/lib/domain/policies/project-access-policy";
 import {
   buildProjectMembers,
   buildProjectCard,
@@ -15,6 +16,7 @@ import {
 
 export class ProjectQueryService {
   private readonly snapshotLoader: SnapshotLoader;
+  private readonly accessPolicy = new ProjectAccessPolicy();
 
   constructor(repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
@@ -100,6 +102,9 @@ export class ProjectQueryService {
     const boardTasks = snapshot.tasks
       .filter((task) => task.projectId === projectId && task.boardId === boardId)
       .filter((task) => isTaskMatching(task, filters));
+    const currentMembership = snapshot.projectMembers.find(
+      (member) => member.projectId === project.id && member.userId === activeUser.id,
+    );
 
     return {
       project,
@@ -119,6 +124,11 @@ export class ProjectQueryService {
       projectMembers: buildProjectMembers(project, snapshot),
       availableLabels: collectProjectLabels(snapshot, projectId),
       filters,
+      permissions: this.accessPolicy.buildActionPermissions(
+        project,
+        activeUser,
+        currentMembership?.memberRole,
+      ),
     };
   }
 

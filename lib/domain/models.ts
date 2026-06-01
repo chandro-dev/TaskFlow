@@ -231,6 +231,7 @@ export interface CreateBoardColumnInput {
   projectId: string;
   boardId: string;
   name: string;
+  wipLimit?: number;
 }
 
 export interface UpdateBoardColumnInput {
@@ -238,6 +239,7 @@ export interface UpdateBoardColumnInput {
   boardId: string;
   columnId: string;
   name: string;
+  wipLimit?: number;
 }
 
 export interface ReorderBoardColumnsInput {
@@ -455,6 +457,22 @@ export interface BoardColumnView extends BoardColumn {
   tasks: BoardTaskView[];
 }
 
+export interface ProjectActionPermissions {
+  accessLabel: string;
+  canAccessProject: boolean;
+  canManageProject: boolean;
+  canCoordinateProject: boolean;
+  canManageMembers: boolean;
+  canManageColumns: boolean;
+  canCreateTask: boolean;
+  canUpdateTask: boolean;
+  canMoveTask: boolean;
+  canCloneTask: boolean;
+  canDeleteTask: boolean;
+  canCloneProject: boolean;
+  isReadOnly: boolean;
+}
+
 export interface BoardPageView {
   project: Project;
   board: Board;
@@ -465,6 +483,7 @@ export interface BoardPageView {
   projectMembers: ProjectMemberView[];
   availableLabels: Label[];
   filters: TaskFilters;
+  permissions: ProjectActionPermissions;
 }
 
 export interface BoardSummaryView {

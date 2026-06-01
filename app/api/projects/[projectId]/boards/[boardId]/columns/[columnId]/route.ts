@@ -11,7 +11,7 @@ export async function PATCH(
   >,
 ) {
   const { projectId, boardId, columnId } = await context.params;
-  const body = (await request.json()) as { name?: string };
+  const body = (await request.json()) as { name?: string; wipLimit?: number };
 
   try {
     await requireProjectCoordinatorRouteUser(projectId);
@@ -20,6 +20,8 @@ export async function PATCH(
       boardId,
       columnId,
       name: body.name ?? "",
+      wipLimit:
+        body.wipLimit === undefined ? undefined : Number(body.wipLimit),
     });
 
     return Response.json(board);

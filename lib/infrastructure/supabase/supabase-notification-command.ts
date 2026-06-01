@@ -20,26 +20,40 @@ export class SupabaseNotificationCommand {
     const payload = input.map((notification) =>
       new ProjectNotificationBuilder(notification).normalize().build(crypto.randomUUID()),
     );
+    const rows = payload.map((notification) => ({
+      id: notification.id,
+      project_id: notification.projectId,
+      recipient_id: notification.recipientId,
+      actor_id: notification.actorId ?? null,
+      board_id: notification.boardId ?? null,
+      task_id: notification.taskId ?? null,
+      kind: notification.kind,
+      title: notification.title,
+      message: notification.message,
+      link_href: notification.linkHref,
+      is_read: notification.isRead,
+      read_at: notification.readAt ?? null,
+      created_at: notification.createdAt,
+    }));
+
+    const rpcResult = await this.client.rpc("create_project_notifications", {
+      target_notifications: rows,
+    });
+
+    if (!this.isMissingCreateNotificationsRpc(rpcResult.error)) {
+      if (rpcResult.error) {
+        throw new Error(
+          rpcResult.error.message ??
+            "No fue posible persistir las notificaciones.",
+        );
+      }
+
+      return ((rpcResult.data ?? []) as NotificationRow[]).map(normalizeNotification);
+    }
 
     const { data, error } = await this.client
       .from("project_notifications")
-      .insert(
-        payload.map((notification) => ({
-          id: notification.id,
-          project_id: notification.projectId,
-          recipient_id: notification.recipientId,
-          actor_id: notification.actorId ?? null,
-          board_id: notification.boardId ?? null,
-          task_id: notification.taskId ?? null,
-          kind: notification.kind,
-          title: notification.title,
-          message: notification.message,
-          link_href: notification.linkHref,
-          is_read: notification.isRead,
-          read_at: notification.readAt ?? null,
-          created_at: notification.createdAt,
-        })),
-      )
+      .insert(rows)
       .select("*");
 
     if (error) {
@@ -49,6 +63,22 @@ export class SupabaseNotificationCommand {
     }
 
     return ((data ?? []) as NotificationRow[]).map(normalizeNotification);
+  }
+
+  private isMissingCreateNotificationsRpc(
+    error: { code?: string; message?: string } | null,
+  ) {
+    if (!error) {
+      return false;
+    }
+
+    const message = error.message?.toLowerCase() ?? "";
+
+    return (
+      error.code === "PGRST202" ||
+      (message.includes("create_project_notifications") &&
+        message.includes("schema cache"))
+    );
   }
 
   async markNotificationRead(notificationId: string, recipientId: string) {

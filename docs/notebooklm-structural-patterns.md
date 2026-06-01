@@ -4,7 +4,7 @@ Este documento esta preparado para alimentar NotebookLM con informacion clara y 
 
 ## 1. Contexto general
 
-Taskflow es una plataforma web de gestion de proyectos y tareas construida con `Next.js`, `TypeScript` y `Supabase`. La aplicacion permite administrar proyectos, tableros Kanban, tareas, subtareas, miembros, invitaciones, notificaciones, filtros, configuracion y reportes.
+Taskflow es una plataforma web de gestion de proyectos y tareas construida con `Next.js`, `TypeScript` y `Supabase`. La aplicacion permite administrar proyectos, tableros Kanban, tareas, subtareas, miembros, invitaciones, notificaciones, filtros, configuracion, reportes y dashboards ejecutivos.
 
 La arquitectura esta separada por capas:
 
@@ -14,7 +14,7 @@ La arquitectura esta separada por capas:
 - `patterns`: implementaciones explicitas de patrones.
 - `app` y `components`: rutas, paginas, handlers API y presentacion.
 
-Los patrones estructurales se usan para organizar relaciones entre objetos y capas. No se aplican como teoria aislada: aparecen en flujos reales como crear tareas, consultar tableros, proteger rutas, adaptar Supabase, enriquecer tarjetas Kanban y generar reportes.
+Los patrones estructurales se usan para organizar relaciones entre objetos y capas. No se aplican como teoria aislada: aparecen en flujos reales como crear tareas, consultar tableros, proteger rutas, adaptar Supabase, enriquecer tarjetas Kanban, generar reportes y presentar dashboards de seguimiento.
 
 ## 2. Patrones estructurales incluidos
 
@@ -25,7 +25,7 @@ Los patrones estructurales se usan para organizar relaciones entre objetos y cap
 | `Decorator` | Enriquecer tareas para la vista Kanban sin modificar la entidad base | `BoardTaskDecorator`, `BoardTaskView` |
 | `Proxy` | Validar acceso antes de ejecutar operaciones sensibles | `RouteAuthorizationProxy` |
 | `Adapter` | Traducir contratos del dominio hacia Supabase, mock y notificaciones | `SupabaseTaskflowRepository`, `MockTaskflowRepository`, `NotificationEventAdapter` |
-| `Bridge` | Separar el reporte base de sus formatos de salida | `ReportQueryService`, `ReportRenderer` |
+| `Bridge` | Separar el dashboard/reporte base de sus formatos de salida | `ReportQueryService`, `ReportRenderer` |
 
 ## 3. Facade
 
@@ -348,13 +348,13 @@ Cada cambio en el dominio debe reflejarse en normalizadores, comandos y queries 
 
 ### Que problema resuelve
 
-El modulo de reportes debe calcular informacion una sola vez y exportarla en distintos formatos: HTML, CSV y JSON.
+El modulo de reportes debe calcular informacion ejecutiva una sola vez y usarla tanto para el dashboard visual de la pantalla `/reports` como para exportarla en distintos formatos: HTML, CSV y JSON.
 
-Sin `Bridge`, el servicio de reportes podria llenarse de condicionales por formato o mezclar calculo de negocio con serializacion.
+Sin `Bridge`, el servicio de reportes podria llenarse de condicionales por formato, mezclar calculo de negocio con serializacion o duplicar la logica entre dashboard y exportaciones.
 
 ### Por que se uso
 
-Se uso `Bridge` para separar la abstraccion del reporte de sus implementadores de salida.
+Se uso `Bridge` para separar la abstraccion del dashboard/reporte de sus implementadores de salida. `ReportQueryService` calcula el modelo ejecutivo base y los renderers deciden como presentarlo o exportarlo.
 
 ### Implementacion
 
@@ -383,14 +383,35 @@ Modelos:
 - `ReportDocument`
 - `RenderedReport`
 
+### Dashboard ejecutivo
+
+La pantalla `/reports` usa el mismo `WorkspaceReportView` generado por `ReportQueryService` para mostrar un dashboard de seguimiento. Este dashboard no es un renderer aparte, sino la vista principal del reporte dentro de la aplicacion.
+
+Elementos del dashboard:
+
+- Tarjetas KPI con proyectos visibles, tareas totales, avance general y tareas vencidas.
+- Fecha y hora de generacion del reporte.
+- Tabla de detalle por proyecto.
+- Estado de cada proyecto.
+- Cantidad de tableros por proyecto.
+- Total de tareas.
+- Tareas completadas.
+- Tareas vencidas.
+- Porcentaje de avance.
+- Relacion entre horas ejecutadas y horas estimadas.
+
+El dashboard usa los mismos datos que luego pueden exportarse. Esto evita inconsistencias entre lo que ve el usuario en pantalla y lo que descarga en HTML, CSV o JSON.
+
 ### Flujo real
 
 1. El usuario entra a `/reports` o solicita exportacion por API.
 2. `TaskflowService.getWorkspaceReport` o `renderWorkspaceReport` actua como entrada.
 3. `ReportQueryService` carga datos desde `IRepositroyFlow`.
-4. El servicio arma un `ReportDocument` independiente del formato.
-5. `createReportRenderer(format)` selecciona HTML, CSV o JSON.
-6. El renderer produce la salida final.
+4. El servicio calcula `WorkspaceReportView` con filas por proyecto y totales globales.
+5. La pagina `/reports` usa `WorkspaceReportView` para pintar el dashboard ejecutivo.
+6. Si se solicita exportacion, el servicio convierte el resultado en `ReportDocument`.
+7. `createReportRenderer(format)` selecciona HTML, CSV o JSON.
+8. El renderer produce la salida final.
 
 ### Evidencia
 
@@ -402,7 +423,7 @@ Modelos:
 
 ### Beneficio
 
-Agregar un nuevo formato no exige reescribir el caso de uso. Por ejemplo, un PDF podria implementarse como nuevo `ReportRenderer`.
+Agregar un nuevo formato no exige reescribir el caso de uso. Por ejemplo, un PDF podria implementarse como nuevo `ReportRenderer`. Ademas, el dashboard y las exportaciones comparten la misma fuente de datos, por lo que las metricas se mantienen consistentes.
 
 ### Limite
 
@@ -410,7 +431,7 @@ El reporte actual cubre metricas ejecutivas. Reportes historicos o auditorias de
 
 ### Mensaje para diapositiva
 
-`Bridge` separa el calculo del reporte de la forma en que se exporta.
+`Bridge` separa el calculo del dashboard/reporte de la forma en que se presenta o exporta.
 
 ## 9. Flujo integrado: crear tarea
 
@@ -442,16 +463,17 @@ Mensaje para diapositiva:
 
 El tablero muestra datos del dominio enriquecidos por patrones estructurales antes de llegar a React.
 
-## 11. Flujo integrado: generar reporte
+## 11. Flujo integrado: generar dashboard y reporte
 
 1. `Facade`: la pagina o API llama `TaskflowService`.
 2. `Adapter`: el reporte usa el repositorio activo para obtener datos.
-3. `Bridge`: `ReportQueryService` crea el reporte base.
-4. `ReportRenderer` exporta HTML, CSV o JSON.
+3. `Bridge`: `ReportQueryService` crea el modelo base del dashboard.
+4. La pantalla `/reports` muestra KPIs y tabla ejecutiva.
+5. `ReportRenderer` exporta HTML, CSV o JSON cuando el usuario descarga el reporte.
 
 Mensaje para diapositiva:
 
-El reporte se calcula una vez y se exporta en distintos formatos gracias a `Bridge`.
+El dashboard y el reporte se calculan una vez; `Bridge` permite mostrar KPIs en pantalla y exportar la misma informacion en diferentes formatos.
 
 ## 12. Tabla de defensa rapida
 
@@ -462,7 +484,7 @@ El reporte se calcula una vez y se exporta en distintos formatos gracias a `Brid
 | `Decorator` | Enriquece la tarea para tablero sin modificar la entidad base | Mezclar dominio con datos visuales |
 | `Proxy` | Bloquea operaciones antes de llegar al caso de uso | Validaciones de seguridad dispersas |
 | `Adapter` | Aisla la aplicacion del proveedor de infraestructura | Dependencia directa de Supabase en la capa de aplicacion |
-| `Bridge` | Separa reporte y formato de salida | Condicionales por formato dentro del servicio |
+| `Bridge` | Separa dashboard/reporte y formato de salida | Condicionales por formato dentro del servicio |
 
 ## 13. Diferencia entre los patrones estructurales
 
@@ -476,7 +498,7 @@ El reporte se calcula una vez y se exporta en distintos formatos gracias a `Brid
 
 `Adapter` traduce una interfaz a otra. En Taskflow, traduce contratos de dominio hacia Supabase, mock y notificaciones persistibles.
 
-`Bridge` separa una abstraccion de sus implementadores. En Taskflow, separa el reporte base de sus formatos HTML, CSV y JSON.
+`Bridge` separa una abstraccion de sus implementadores. En Taskflow, separa el dashboard/reporte base de sus formatos HTML, CSV y JSON.
 
 ## 14. Archivos clave para NotebookLM
 
@@ -511,8 +533,8 @@ Archivos de codigo mas importantes:
 5. `Adapter` permite cambiar entre Supabase y mock sin afectar la aplicacion.
 6. `Composite` calcula el progreso de tareas con subtareas.
 7. `Decorator` enriquece las tareas para mostrar tarjetas Kanban mas completas.
-8. `Bridge` permite generar reportes en varios formatos desde un mismo documento base.
-9. Los patrones trabajan juntos en flujos reales como crear tareas, consultar tableros y exportar reportes.
+8. `Bridge` permite alimentar dashboards ejecutivos y generar reportes en varios formatos desde un mismo modelo base.
+9. Los patrones trabajan juntos en flujos reales como crear tareas, consultar tableros, visualizar dashboards y exportar reportes.
 10. El resultado es una aplicacion mas mantenible, extensible y facil de sustentar tecnicamente.
 
 ## 16. Conclusiones
@@ -524,6 +546,6 @@ Los patrones estructurales en Taskflow no se implementaron para cumplir una list
 - aislar proveedores de infraestructura,
 - enriquecer datos para la interfaz sin dañar el dominio,
 - calcular progreso de estructuras compuestas,
-- y exportar reportes sin duplicar logica.
+- visualizar dashboards y exportar reportes sin duplicar logica.
 
-La evidencia principal esta en la relacion entre `TaskflowService`, los adaptadores de infraestructura, las clases de autorizacion, los decoradores de tareas, el composite de subtareas y el bridge de reportes.
+La evidencia principal esta en la relacion entre `TaskflowService`, los adaptadores de infraestructura, las clases de autorizacion, los decoradores de tareas, el composite de subtareas y el bridge de dashboards/reportes.

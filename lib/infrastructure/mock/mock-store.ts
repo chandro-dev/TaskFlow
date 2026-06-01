@@ -336,7 +336,12 @@ export class MockTaskflowStore {
     return structuredClone(board);
   }
 
-  createBoardColumn(input: { projectId: string; boardId: string; name: string }) {
+  createBoardColumn(input: {
+    projectId: string;
+    boardId: string;
+    name: string;
+    wipLimit?: number;
+  }) {
     const board = this.findBoardAggregate(input.projectId, input.boardId);
     const defaults = getDefaultBoardColumnDrafts();
     const fallback = defaults[board.columns.length % defaults.length];
@@ -347,7 +352,7 @@ export class MockTaskflowStore {
       name: input.name.trim(),
       order: board.columns.length + 1,
       color: fallback?.color ?? "#b8c2d4",
-      wipLimit: fallback?.wipLimit,
+      wipLimit: input.wipLimit ?? fallback?.wipLimit,
     });
 
     return structuredClone(this.sortBoardColumns(board));
@@ -358,6 +363,7 @@ export class MockTaskflowStore {
     boardId: string;
     columnId: string;
     name: string;
+    wipLimit?: number;
   }) {
     const board = this.findBoardAggregate(input.projectId, input.boardId);
     const column = board.columns.find((item) => item.id === input.columnId);
@@ -367,6 +373,7 @@ export class MockTaskflowStore {
     }
 
     column.name = input.name.trim();
+    column.wipLimit = input.wipLimit;
     return structuredClone(this.sortBoardColumns(board));
   }
 

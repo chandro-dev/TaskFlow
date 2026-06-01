@@ -9,7 +9,7 @@ export async function POST(
   context: RouteContext<"/api/projects/[projectId]/boards/[boardId]/columns">,
 ) {
   const { projectId, boardId } = await context.params;
-  const body = (await request.json()) as { name?: string };
+  const body = (await request.json()) as { name?: string; wipLimit?: number };
 
   try {
     await requireProjectCoordinatorRouteUser(projectId);
@@ -17,6 +17,8 @@ export async function POST(
       projectId,
       boardId,
       name: body.name ?? "",
+      wipLimit:
+        body.wipLimit === undefined ? undefined : Number(body.wipLimit),
     });
 
     return Response.json(board, { status: 201 });

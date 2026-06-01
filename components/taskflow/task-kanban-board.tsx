@@ -7,7 +7,11 @@ import { TaskCloneModal } from "@/components/taskflow/task-clone-modal";
 import { TaskDeleteButton } from "@/components/taskflow/task-delete-button";
 import { TaskEditorModal } from "@/components/taskflow/task-editor-modal";
 import { UndoRedoBar } from "@/components/taskflow/undo-redo-bar";
-import type { BoardColumnView, UserProfile } from "@/lib/domain/models";
+import type {
+  BoardColumnView,
+  ProjectActionPermissions,
+  UserProfile,
+} from "@/lib/domain/models";
 
 type MoveStatus = {
   taskId: string;
@@ -56,11 +60,13 @@ export function TaskKanbanBoard({
   boardId,
   initialColumns,
   users,
+  permissions,
 }: {
   projectId: string;
   boardId: string;
   initialColumns: BoardColumnView[];
   users: UserProfile[];
+  permissions: ProjectActionPermissions;
 }) {
   const router = useRouter();
   const [columns, setColumns] = useState(initialColumns);
@@ -121,6 +127,10 @@ export function TaskKanbanBoard({
   }
 
   async function handleDrop(targetColumnId: string) {
+    if (!permissions.canMoveTask) {
+      return;
+    }
+
     if (!draggedTaskId || !draggedFromColumnId) {
       return;
     }
@@ -186,10 +196,19 @@ export function TaskKanbanBoard({
           {error}
         </div>
       ) : null}
+      {permissions.isReadOnly ? (
+        <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] px-4 py-3 text-sm text-[color:var(--color-text-secondary)]">
+          Este proyecto esta en modo solo lectura. Puedes consultar tareas, pero
+          no crear, mover ni editar elementos.
+        </div>
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-4">
         {columns.map((column) => {
           const isDropTarget = dropColumnId === column.id;
+          const wipLimit = column.wipLimit;
+          const hasWipLimit = typeof wipLimit === "number";
+          const isWipExceeded = hasWipLimit && column.tasks.length > wipLimit;
 
           return (
             <section key={column.id} className="space-y-4">
@@ -201,13 +220,22 @@ export function TaskKanbanBoard({
                   />
                   <h2 className="text-2xl font-semibold">{column.name}</h2>
                 </div>
-                <div className="text-sm text-[color:var(--color-text-secondary)]">
+                <div
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                    isWipExceeded
+                      ? "bg-[color:rgba(217,83,111,0.14)] text-[color:var(--color-danger)]"
+                      : "bg-[color:var(--color-surface-muted)] text-[color:var(--color-text-secondary)]"
+                  }`}
+                >
                   {column.tasks.length}
-                  {column.wipLimit && column.wipLimit < 999
-                    ? ` / WIP ${column.wipLimit}`
-                    : ""}
+                  {hasWipLimit ? ` / WIP ${wipLimit}` : ""}
                 </div>
               </div>
+              {isWipExceeded ? (
+                <p className="text-sm font-medium text-[color:var(--color-danger)]">
+                  Esta columna supera el limite WIP configurado.
+                </p>
+              ) : null}
 
               <div
                 onDragOver={(event) => {
@@ -240,8 +268,12 @@ export function TaskKanbanBoard({
                     return (
                       <div
                         key={task.id}
-                        draggable={isMovingTask === null}
+                        draggable={permissions.canMoveTask && isMovingTask === null}
                         onDragStart={() => {
+                          if (!permissions.canMoveTask) {
+                            return;
+                          }
+
                           setDraggedTaskId(task.id);
                           setDraggedFromColumnId(column.id);
                           setError(null);
@@ -251,7 +283,11 @@ export function TaskKanbanBoard({
                           setDraggedFromColumnId(null);
                           setDropColumnId(null);
                         }}
-                        className={`cursor-grab active:cursor-grabbing ${
+                        className={`${
+                          permissions.canMoveTask
+                            ? "cursor-grab active:cursor-grabbing"
+                            : ""
+                        } ${
                           isDragging ? "opacity-55" : ""
                         } ${isSaving ? "animate-pulse" : ""}`}
                       >
@@ -259,25 +295,31 @@ export function TaskKanbanBoard({
                           task={task}
                           actions={
                             <div className="flex flex-wrap justify-end gap-2">
-                              <TaskEditorModal
-                                task={task}
-                                projectId={projectId}
-                                boardId={boardId}
-                                columns={columns}
-                                users={users}
-                              />
-                              <TaskCloneModal
-                                task={task}
-                                projectId={projectId}
-                                boardId={boardId}
-                                columns={columns}
-                                users={users}
-                              />
-                              <TaskDeleteButton
-                                taskId={task.id}
-                                projectId={projectId}
-                                boardId={boardId}
-                              />
+                              {permissions.canUpdateTask ? (
+                                <TaskEditorModal
+                                  task={task}
+                                  projectId={projectId}
+                                  boardId={boardId}
+                                  columns={columns}
+                                  users={users}
+                                />
+                              ) : null}
+                              {permissions.canCloneTask ? (
+                                <TaskCloneModal
+                                  task={task}
+                                  projectId={projectId}
+                                  boardId={boardId}
+                                  columns={columns}
+                                  users={users}
+                                />
+                              ) : null}
+                              {permissions.canDeleteTask ? (
+                                <TaskDeleteButton
+                                  taskId={task.id}
+                                  projectId={projectId}
+                                  boardId={boardId}
+                                />
+                              ) : null}
                             </div>
                           }
                         />
@@ -296,14 +338,16 @@ export function TaskKanbanBoard({
         })}
       </div>
 
-      <UndoRedoBar
-        onUndoRedo={() => {
-          startTransition(() => {
-            router.refresh();
-          });
-          window.dispatchEvent(new CustomEvent("taskflow-action"));
-        }}
-      />
+      {permissions.canMoveTask ? (
+        <UndoRedoBar
+          onUndoRedo={() => {
+            startTransition(() => {
+              router.refresh();
+            });
+            window.dispatchEvent(new CustomEvent("taskflow-action"));
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -52,6 +52,7 @@ export class BoardCommandService {
 
   async createBoardColumn(input: CreateBoardColumnInput) {
     const name = input.name.trim();
+    const wipLimit = this.normalizeWipLimit(input.wipLimit);
 
     if (!name) {
       throw new Error("La columna requiere un nombre.");
@@ -60,11 +61,13 @@ export class BoardCommandService {
     return this.repository.createBoardColumn({
       ...input,
       name,
+      wipLimit,
     });
   }
 
   async updateBoardColumn(input: UpdateBoardColumnInput) {
     const name = input.name.trim();
+    const wipLimit = this.normalizeWipLimit(input.wipLimit);
 
     if (!name) {
       throw new Error("La columna requiere un nombre.");
@@ -73,6 +76,7 @@ export class BoardCommandService {
     return this.repository.updateBoardColumn({
       ...input,
       name,
+      wipLimit,
     });
   }
 
@@ -95,5 +99,17 @@ export class BoardCommandService {
 
   async deleteBoardColumn(input: DeleteBoardColumnInput) {
     return this.repository.deleteBoardColumn(input);
+  }
+
+  private normalizeWipLimit(value?: number) {
+    if (value === undefined || Number.isNaN(value)) {
+      return undefined;
+    }
+
+    if (value < 1) {
+      throw new Error("El limite WIP debe ser mayor que cero.");
+    }
+
+    return Math.floor(value);
   }
 }

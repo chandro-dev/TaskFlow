@@ -1,12 +1,18 @@
 import type { CreateTaskInput } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
+import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
+import { assertColumnWipCapacity } from "@/lib/application/tasks/wip-limit-guard";
 import type { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
 
 export class TaskCommandService {
+  private readonly snapshotLoader: SnapshotLoader;
+
   constructor(
     private readonly repository: IRepositroyFlow,
     private readonly notificationPublisher: ProjectEventPublisher,
-  ) {}
+  ) {
+    this.snapshotLoader = new SnapshotLoader(repository);
+  }
 
   async createTask(input: CreateTaskInput) {
     if (!input.actorId) {
@@ -45,8 +51,22 @@ export class TaskCommandService {
       throw new Error("Todas las subtareas deben tener un titulo.");
     }
 
+    const snapshot = await this.snapshotLoader.load();
+    const board = snapshot.boards.find((item) => item.id === input.boardId);
+    const targetColumnId = input.columnId ?? board?.columns[0]?.id;
+
+    if (!targetColumnId) {
+      throw new Error("El tablero no tiene columnas disponibles.");
+    }
+
+    assertColumnWipCapacity(snapshot, {
+      boardId: input.boardId,
+      columnId: targetColumnId,
+    });
+
     const task = await this.repository.createTask({
       ...input,
+      columnId: targetColumnId,
       title,
       description,
       spentHours: input.spentHours ?? 0,

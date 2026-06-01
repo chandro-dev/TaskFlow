@@ -70,7 +70,7 @@ export function normalizeBoardColumn(row: BoardColumnRow): BoardColumn {
     name: row.name,
     order: row.position,
     color: row.color,
-    wipLimit: row.wip_limit ?? undefined,
+    wipLimit: row.wip_limit ?? 999,
   };
 }
 

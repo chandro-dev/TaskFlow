@@ -8,6 +8,7 @@ import type { BoardColumnView } from "@/lib/domain/models";
 type ColumnRow = {
   id: string;
   name: string;
+  wipLimit: string;
   taskCount: number;
 };
 
@@ -18,6 +19,7 @@ function mapColumns(columns: BoardColumnView[]): ColumnRow[] {
     .map((column) => ({
       id: column.id,
       name: column.name,
+      wipLimit: String(column.wipLimit ?? ""),
       taskCount: column.tasks.length,
     }));
 }
@@ -66,6 +68,7 @@ export function BoardColumnManagerModal({
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ColumnRow[]>(() => mapColumns(columns));
   const [newColumnName, setNewColumnName] = useState("");
+  const [newColumnWipLimit, setNewColumnWipLimit] = useState("4");
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -89,7 +92,10 @@ export function BoardColumnManagerModal({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newColumnName }),
+        body: JSON.stringify({
+          name: newColumnName,
+          wipLimit: Number(newColumnWipLimit),
+        }),
       },
     );
 
@@ -102,27 +108,31 @@ export function BoardColumnManagerModal({
     }
 
     setNewColumnName("");
+    setNewColumnWipLimit("4");
     setPendingAction(null);
     startTransition(() => router.refresh());
   }
 
-  async function handleRename(columnId: string, name: string) {
-    setPendingAction(`rename:${columnId}`);
+  async function handleSaveColumn(row: ColumnRow) {
+    setPendingAction(`save:${row.id}`);
     setError(null);
 
     const response = await fetch(
-      `/api/projects/${projectId}/boards/${boardId}/columns/${columnId}`,
+      `/api/projects/${projectId}/boards/${boardId}/columns/${row.id}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({
+          name: row.name,
+          wipLimit: Number(row.wipLimit),
+        }),
       },
     );
 
     const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
-      setError(payload?.error ?? "No fue posible renombrar la columna.");
+      setError(payload?.error ?? "No fue posible actualizar la columna.");
       setPendingAction(null);
       return;
     }
@@ -236,7 +246,7 @@ export function BoardColumnManagerModal({
         >
           <div className="space-y-5">
             <div className="rounded-[1.5rem] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-5">
-              <div className="flex flex-wrap items-end gap-3">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_10rem_auto] lg:items-end">
                 <div className="min-w-0 flex-1">
                   <label className="mb-2 block text-sm font-medium text-[color:var(--color-text-primary)]">
                     Nueva columna
@@ -245,6 +255,18 @@ export function BoardColumnManagerModal({
                     value={newColumnName}
                     onChange={(event) => setNewColumnName(event.target.value)}
                     placeholder="Nombre de la columna"
+                    className="taskflow-input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[color:var(--color-text-primary)]">
+                    WIP
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newColumnWipLimit}
+                    onChange={(event) => setNewColumnWipLimit(event.target.value)}
                     className="taskflow-input"
                   />
                 </div>
@@ -314,31 +336,53 @@ export function BoardColumnManagerModal({
                         <span className="text-sm text-[color:var(--color-text-secondary)]">
                           {row.taskCount} tarea(s) en esta columna
                         </span>
+                        <span className="text-sm text-[color:var(--color-text-secondary)]">
+                          WIP {row.wipLimit}
+                        </span>
                       </div>
-                      <input
-                        value={row.name}
-                        onChange={(event) =>
-                          setRows((current) =>
-                            current.map((item) =>
-                              item.id === row.id
-                                ? { ...item, name: event.target.value }
-                                : item,
-                            ),
-                          )
-                        }
-                        className="taskflow-input"
-                        required
-                      />
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_9rem]">
+                        <input
+                          value={row.name}
+                          onChange={(event) =>
+                            setRows((current) =>
+                              current.map((item) =>
+                                item.id === row.id
+                                  ? { ...item, name: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className="taskflow-input"
+                          required
+                        />
+                        <input
+                          type="number"
+                          min="1"
+                          value={row.wipLimit}
+                          onChange={(event) =>
+                            setRows((current) =>
+                              current.map((item) =>
+                                item.id === row.id
+                                  ? { ...item, wipLimit: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className="taskflow-input"
+                          aria-label={`Limite WIP de ${row.name}`}
+                          required
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                       <button
                         type="button"
-                        onClick={() => void handleRename(row.id, row.name)}
+                        onClick={() => void handleSaveColumn(row)}
                         disabled={pendingAction !== null}
                         className="rounded-2xl border border-[color:var(--color-border)] px-3 py-2 text-sm font-medium disabled:opacity-60"
                       >
-                        Guardar nombre
+                        Guardar
                       </button>
                       <button
                         type="button"

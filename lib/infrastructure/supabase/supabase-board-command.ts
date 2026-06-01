@@ -78,7 +78,7 @@ export class SupabaseBoardCommand {
       name: input.name.trim(),
       position: board.columns.length + 1,
       color: fallback?.color ?? "#b8c2d4",
-      wip_limit: fallback?.wipLimit ?? null,
+      wip_limit: input.wipLimit ?? fallback?.wipLimit ?? null,
     });
 
     if (error) {
@@ -95,6 +95,7 @@ export class SupabaseBoardCommand {
       .from("board_columns")
       .update({
         name: input.name.trim(),
+        wip_limit: input.wipLimit ?? null,
       })
       .eq("id", input.columnId)
       .eq("board_id", input.boardId);

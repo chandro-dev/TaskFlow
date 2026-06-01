@@ -116,7 +116,7 @@ export class TaskflowService {
   }
 
   async moveTask(input: MoveTaskInput) {
-    return this.services.taskMoves.moveTask(input);
+    return this.services.taskMoves.moveTask(input); 
   }
 
   async cloneTask(input: CloneTaskRequestInput) {

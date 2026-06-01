@@ -20,7 +20,6 @@ export class SupabaseNotificationCommand {
     const payload = input.map((notification) =>
       new ProjectNotificationBuilder(notification).normalize().build(crypto.randomUUID()),
     );
-<<<<<<< HEAD
     const rows = payload.map((notification) => ({
       id: notification.id,
       project_id: notification.projectId,
@@ -55,28 +54,6 @@ export class SupabaseNotificationCommand {
     const { data, error } = await this.client
       .from("project_notifications")
       .insert(rows)
-=======
-
-    const { data, error } = await this.client
-      .from("project_notifications")
-      .insert(
-        payload.map((notification) => ({
-          id: notification.id,
-          project_id: notification.projectId,
-          recipient_id: notification.recipientId,
-          actor_id: notification.actorId ?? null,
-          board_id: notification.boardId ?? null,
-          task_id: notification.taskId ?? null,
-          kind: notification.kind,
-          title: notification.title,
-          message: notification.message,
-          link_href: notification.linkHref,
-          is_read: notification.isRead,
-          read_at: notification.readAt ?? null,
-          created_at: notification.createdAt,
-        })),
-      )
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       .select("*");
 
     if (error) {
@@ -88,7 +65,6 @@ export class SupabaseNotificationCommand {
     return ((data ?? []) as NotificationRow[]).map(normalizeNotification);
   }
 
-<<<<<<< HEAD
   private isMissingCreateNotificationsRpc(
     error: { code?: string; message?: string } | null,
   ) {
@@ -105,8 +81,6 @@ export class SupabaseNotificationCommand {
     );
   }
 
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   async markNotificationRead(notificationId: string, recipientId: string) {
     const { data, error } = await this.client
       .from("project_notifications")

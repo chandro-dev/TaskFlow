@@ -1,15 +1,10 @@
-<<<<<<< HEAD
 import type { Project, UserProfile, UserRole } from "@/lib/domain/models";
-=======
-import type { Project, UserProfile } from "@/lib/domain/models";
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
 export class ProjectAccessPolicy {
   canManage(project: Project, user: UserProfile) {
     return project.ownerId === user.id || user.role === "ADMIN";
   }
 
-<<<<<<< HEAD
   canCoordinate(project: Project, user: UserProfile, memberRole?: UserRole | null) {
     return this.canManage(project, user) || memberRole === "PROJECT_MANAGER";
   }
@@ -69,9 +64,4 @@ export class ProjectAccessPolicy {
 
     return "Sin acceso";
   }
-=======
-  canAccess(project: Project, user: UserProfile) {
-    return this.canManage(project, user) || project.memberIds.includes(user.id);
-  }
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 }

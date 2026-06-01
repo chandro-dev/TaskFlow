@@ -52,10 +52,7 @@ export class BoardCommandService {
 
   async createBoardColumn(input: CreateBoardColumnInput) {
     const name = input.name.trim();
-<<<<<<< HEAD
     const wipLimit = this.normalizeWipLimit(input.wipLimit);
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
     if (!name) {
       throw new Error("La columna requiere un nombre.");
@@ -64,19 +61,13 @@ export class BoardCommandService {
     return this.repository.createBoardColumn({
       ...input,
       name,
-<<<<<<< HEAD
       wipLimit,
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     });
   }
 
   async updateBoardColumn(input: UpdateBoardColumnInput) {
     const name = input.name.trim();
-<<<<<<< HEAD
     const wipLimit = this.normalizeWipLimit(input.wipLimit);
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
     if (!name) {
       throw new Error("La columna requiere un nombre.");
@@ -85,10 +76,7 @@ export class BoardCommandService {
     return this.repository.updateBoardColumn({
       ...input,
       name,
-<<<<<<< HEAD
       wipLimit,
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     });
   }
 
@@ -112,7 +100,6 @@ export class BoardCommandService {
   async deleteBoardColumn(input: DeleteBoardColumnInput) {
     return this.repository.deleteBoardColumn(input);
   }
-<<<<<<< HEAD
 
   private normalizeWipLimit(value?: number) {
     if (value === undefined || Number.isNaN(value)) {
@@ -125,6 +112,4 @@ export class BoardCommandService {
 
     return Math.floor(value);
   }
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 }

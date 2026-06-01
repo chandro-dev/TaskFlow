@@ -1,6 +1,5 @@
 import type { CreateTaskInput } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
-<<<<<<< HEAD
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
 import { assertColumnWipCapacity } from "@/lib/application/tasks/wip-limit-guard";
 import type { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
@@ -14,15 +13,6 @@ export class TaskCommandService {
   ) {
     this.snapshotLoader = new SnapshotLoader(repository);
   }
-=======
-import type { ProjectEventPublisher } from "@/lib/patterns/observer/project-event-publisher";
-
-export class TaskCommandService {
-  constructor(
-    private readonly repository: IRepositroyFlow,
-    private readonly notificationPublisher: ProjectEventPublisher,
-  ) {}
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
   async createTask(input: CreateTaskInput) {
     if (!input.actorId) {
@@ -61,7 +51,6 @@ export class TaskCommandService {
       throw new Error("Todas las subtareas deben tener un titulo.");
     }
 
-<<<<<<< HEAD
     const snapshot = await this.snapshotLoader.load();
     const board = snapshot.boards.find((item) => item.id === input.boardId);
     const targetColumnId = input.columnId ?? board?.columns[0]?.id;
@@ -78,10 +67,6 @@ export class TaskCommandService {
     const task = await this.repository.createTask({
       ...input,
       columnId: targetColumnId,
-=======
-    const task = await this.repository.createTask({
-      ...input,
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       title,
       description,
       spentHours: input.spentHours ?? 0,

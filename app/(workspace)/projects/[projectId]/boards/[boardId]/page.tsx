@@ -67,18 +67,7 @@ export default async function BoardPage({
   }
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
-<<<<<<< HEAD
   const { permissions } = data;
-=======
-  const currentMembership = data.projectMembers.find(
-    (member) => member.user.id === data.currentUser.id,
-  );
-  const canManageMembers =
-    data.currentUser.role === "ADMIN" ||
-    data.project.ownerId === data.currentUser.id ||
-    currentMembership?.memberRole === "PROJECT_MANAGER";
-  const canManageColumns = canManageMembers;
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
   return (
     <div className="space-y-8">
@@ -94,7 +83,6 @@ export default async function BoardPage({
             Gestion de columnas, WIP, tipos de tarea, responsables, etiquetas y
             filtros avanzados sobre el proyecto activo.
           </p>
-<<<<<<< HEAD
           <div className="mt-3 flex flex-wrap gap-3">
             <span className="taskflow-chip">{permissions.accessLabel}</span>
             {permissions.isReadOnly ? (
@@ -102,9 +90,6 @@ export default async function BoardPage({
             ) : null}
           </div>
           {permissions.canManageMembers ? (
-=======
-          {canManageMembers ? (
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
             <p className="mt-3 text-sm font-medium text-[color:var(--color-accent)]">
               Puedes gestionar miembros, cambiar privilegios del proyecto y revocar
               acceso desde este tablero.
@@ -114,33 +99,21 @@ export default async function BoardPage({
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="taskflow-chip">{activeFilterCount} filtros activos</div>
-<<<<<<< HEAD
           {permissions.canManageMembers ? (
-=======
-          {canManageMembers ? (
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
             <BoardMemberManagerModal
               projectId={data.project.id}
               projectName={data.project.name}
               projectMembers={data.projectMembers}
-<<<<<<< HEAD
               canManageMembers={permissions.canManageMembers}
             />
           ) : null}
           {permissions.canManageColumns ? (
-=======
-              canManageMembers={canManageMembers}
-            />
-          ) : null}
-          {canManageColumns ? (
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
             <BoardColumnManagerModal
               projectId={data.project.id}
               boardId={data.board.id}
               columns={data.columns}
             />
           ) : null}
-<<<<<<< HEAD
           {permissions.canCreateTask ? (
             <TaskCreator
               projectId={data.project.id}
@@ -149,14 +122,6 @@ export default async function BoardPage({
               users={data.users}
             />
           ) : null}
-=======
-          <TaskCreator
-            projectId={data.project.id}
-            boardId={data.board.id}
-            columns={data.board.columns}
-            users={data.users}
-          />
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
         </div>
       </div>
 
@@ -248,10 +213,7 @@ export default async function BoardPage({
         boardId={data.board.id}
         initialColumns={data.columns}
         users={data.users}
-<<<<<<< HEAD
         permissions={permissions}
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       />
     </div>
   );

@@ -1,5 +1,9 @@
 import type { Command } from "./command";
 
+type CommandManagerGlobal = typeof globalThis & {
+  commandManagerInstance?: CommandManager;
+};
+
 // Pattern traceability: Command Invoker / History Manager
 export class CommandManager {
   private undoStack: Command[] = [];
@@ -10,7 +14,7 @@ export class CommandManager {
 
   static getInstance(): CommandManager {
     // Use globalThis to persist the singleton across compile boundaries/hot-reloads in Next.js.
-    const globalManager = globalThis as any;
+    const globalManager = globalThis as CommandManagerGlobal;
     if (!globalManager.commandManagerInstance) {
       globalManager.commandManagerInstance = new CommandManager();
     }

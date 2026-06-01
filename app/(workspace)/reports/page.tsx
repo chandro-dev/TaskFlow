@@ -1,19 +1,14 @@
 import { requireAuthenticatedUser } from "@/lib/auth/current-user";
 import { TaskflowService } from "@/lib/application/taskflow-service";
-<<<<<<< HEAD
 import type { ProjectReportRow } from "@/lib/application/reports/report-query-service";
 import type { ProjectState } from "@/lib/domain/models";
 import { formatDateTime, percentage, projectStateLabel } from "@/lib/utils/format";
-=======
-import { formatDateTime, percentage } from "@/lib/utils/format";
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
 const service = new TaskflowService();
 
 export default async function ReportsPage() {
   const currentUser = await requireAuthenticatedUser();
   const report = await service.getWorkspaceReport(currentUser);
-<<<<<<< HEAD
   const hourUsage = progressRatio(
     report.totals.spentHours,
     report.totals.estimateHours,
@@ -75,22 +70,6 @@ export default async function ReportsPage() {
           <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--color-text-secondary)]">
             Vista ejecutiva de proyectos, avance, vencimientos y horas. El dashboard
             y las exportaciones comparten el mismo modelo mediante Bridge.
-=======
-
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-secondary)]">
-            Bridge
-          </p>
-          <h1 className="mt-3 font-[family-name:var(--font-display)] text-5xl font-semibold text-[color:var(--color-text-primary)]">
-            Reportes ejecutivos
-          </h1>
-          <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--color-text-secondary)]">
-            Consolidado de proyectos, tableros, avance, tareas vencidas y horas.
-            El mismo reporte se renderiza en diferentes formatos mediante Bridge.
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
           </p>
         </div>
 
@@ -107,7 +86,6 @@ export default async function ReportsPage() {
         </div>
       </div>
 
-<<<<<<< HEAD
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardMetric
           label="Proyectos visibles"
@@ -292,40 +270,6 @@ export default async function ReportsPage() {
             )}
           </div>
         </div>
-=======
-      <section className="taskflow-panel p-6">
-        <div className="grid gap-4 md:grid-cols-4">
-          <div>
-            <p className="text-sm text-[color:var(--color-text-secondary)]">
-              Proyectos visibles
-            </p>
-            <p className="mt-2 text-3xl font-semibold">{report.totals.projects}</p>
-          </div>
-          <div>
-            <p className="text-sm text-[color:var(--color-text-secondary)]">
-              Tareas totales
-            </p>
-            <p className="mt-2 text-3xl font-semibold">{report.totals.totalTasks}</p>
-          </div>
-          <div>
-            <p className="text-sm text-[color:var(--color-text-secondary)]">
-              Avance general
-            </p>
-            <p className="mt-2 text-3xl font-semibold">
-              {percentage(report.totals.progress)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-[color:var(--color-text-secondary)]">
-              Tareas vencidas
-            </p>
-            <p className="mt-2 text-3xl font-semibold">{report.totals.overdueTasks}</p>
-          </div>
-        </div>
-        <p className="mt-5 text-sm text-[color:var(--color-text-secondary)]">
-          Generado: {formatDateTime(report.generatedAt)}
-        </p>
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       </section>
 
       <section className="taskflow-panel overflow-hidden p-0">
@@ -358,7 +302,6 @@ export default async function ReportsPage() {
                   <td className="px-5 py-4">{row.totalTasks}</td>
                   <td className="px-5 py-4">{row.completedTasks}</td>
                   <td className="px-5 py-4">{row.overdueTasks}</td>
-<<<<<<< HEAD
                   <td className="px-5 py-4">
                     <div className="min-w-32">
                       <div className="flex items-center justify-between gap-3 text-sm">
@@ -372,9 +315,6 @@ export default async function ReportsPage() {
                       </div>
                     </div>
                   </td>
-=======
-                  <td className="px-5 py-4">{percentage(row.progress)}</td>
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                   <td className="px-5 py-4">
                     {row.spentHours}/{row.estimateHours}h
                   </td>
@@ -387,7 +327,6 @@ export default async function ReportsPage() {
     </div>
   );
 }
-<<<<<<< HEAD
 
 function DashboardMetric({
   label,
@@ -638,5 +577,3 @@ function progressRatio(value: number, max: number) {
 function clamp(value: number) {
   return Math.min(Math.max(value, 0), 100);
 }
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29

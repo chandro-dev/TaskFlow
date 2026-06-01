@@ -40,6 +40,10 @@ import { createUserProfileFactory } from "@/lib/patterns/factory/user-profile-fa
 import { InvitationPrototype } from "@/lib/patterns/prototype/invitation-prototype";
 import { SubtaskPrototype, TaskPrototype } from "@/lib/patterns/prototype/clone";
 
+type MockStoreGlobal = typeof globalThis & {
+  mockTaskflowStoreInstance?: MockTaskflowStore;
+};
+
 export class MockTaskflowStore {
   private static instance: MockTaskflowStore | null = null;
   private snapshot: TaskflowSnapshot;
@@ -53,7 +57,7 @@ export class MockTaskflowStore {
     // The mock store behaves like one shared in-memory database during local
     // execution so all requests observe the same evolving snapshot.
     // Use globalThis to persist the singleton across compile boundaries/hot-reloads in Next.js.
-    const globalStore = globalThis as any;
+    const globalStore = globalThis as MockStoreGlobal;
     if (!globalStore.mockTaskflowStoreInstance) {
       globalStore.mockTaskflowStoreInstance = new MockTaskflowStore();
     }
@@ -336,16 +340,12 @@ export class MockTaskflowStore {
     return structuredClone(board);
   }
 
-<<<<<<< HEAD
   createBoardColumn(input: {
     projectId: string;
     boardId: string;
     name: string;
     wipLimit?: number;
   }) {
-=======
-  createBoardColumn(input: { projectId: string; boardId: string; name: string }) {
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     const board = this.findBoardAggregate(input.projectId, input.boardId);
     const defaults = getDefaultBoardColumnDrafts();
     const fallback = defaults[board.columns.length % defaults.length];
@@ -356,11 +356,7 @@ export class MockTaskflowStore {
       name: input.name.trim(),
       order: board.columns.length + 1,
       color: fallback?.color ?? "#b8c2d4",
-<<<<<<< HEAD
       wipLimit: input.wipLimit ?? fallback?.wipLimit,
-=======
-      wipLimit: fallback?.wipLimit,
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     });
 
     return structuredClone(this.sortBoardColumns(board));
@@ -371,10 +367,7 @@ export class MockTaskflowStore {
     boardId: string;
     columnId: string;
     name: string;
-<<<<<<< HEAD
     wipLimit?: number;
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   }) {
     const board = this.findBoardAggregate(input.projectId, input.boardId);
     const column = board.columns.find((item) => item.id === input.columnId);
@@ -384,10 +377,7 @@ export class MockTaskflowStore {
     }
 
     column.name = input.name.trim();
-<<<<<<< HEAD
     column.wipLimit = input.wipLimit;
-=======
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     return structuredClone(this.sortBoardColumns(board));
   }
 

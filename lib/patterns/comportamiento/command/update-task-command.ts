@@ -1,7 +1,6 @@
 import type { Command } from "@/lib/patterns/comportamiento/command/command";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import type { Task, UpdateTaskInput } from "@/lib/domain/models";
-import { TaskOriginator } from "@/lib/patterns/memento/task-originator";
 
 export class UpdateTaskCommand implements Command {
   public result: Task | null = null;
@@ -28,8 +27,7 @@ export class UpdateTaskCommand implements Command {
     }
 
     this.taskTitle = task.title;
-    const originator = new TaskOriginator(task);
-    this.previousState = originator.saveToMemento().getState();
+    this.previousState = structuredClone(task);
 
     this.result = await this.repository.updateTask(this.input);
   }

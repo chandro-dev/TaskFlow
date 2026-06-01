@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 interface HistoryState {
   canUndo: boolean;
@@ -18,7 +18,7 @@ export function UndoRedoBar({ onUndoRedo }: { onUndoRedo: () => void }) {
   });
   const [isPending, startTransition] = useTransition();
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const res = await fetch("/api/tasks/history");
       if (res.ok) {
@@ -28,11 +28,12 @@ export function UndoRedoBar({ onUndoRedo }: { onUndoRedo: () => void }) {
     } catch (err) {
       console.error("Error al obtener historial de comandos:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // Cargar historial inicial
-    void fetchHistory();
+    const timeout = window.setTimeout(() => {
+      void fetchHistory();
+    }, 0);
 
     const handleAction = () => {
       void fetchHistory();
@@ -40,11 +41,12 @@ export function UndoRedoBar({ onUndoRedo }: { onUndoRedo: () => void }) {
 
     window.addEventListener("taskflow-action", handleAction);
     return () => {
+      window.clearTimeout(timeout);
       window.removeEventListener("taskflow-action", handleAction);
     };
-  }, []);
+  }, [fetchHistory]);
 
-  const handleUndo = async () => {
+  const handleUndo = useCallback(async () => {
     if (!history.canUndo || isPending) return;
 
     startTransition(async () => {
@@ -59,9 +61,9 @@ export function UndoRedoBar({ onUndoRedo }: { onUndoRedo: () => void }) {
         console.error("Error al deshacer:", err);
       }
     });
-  };
+  }, [history.canUndo, isPending, onUndoRedo]);
 
-  const handleRedo = async () => {
+  const handleRedo = useCallback(async () => {
     if (!history.canRedo || isPending) return;
 
     startTransition(async () => {
@@ -76,7 +78,7 @@ export function UndoRedoBar({ onUndoRedo }: { onUndoRedo: () => void }) {
         console.error("Error al rehacer:", err);
       }
     });
-  };
+  }, [history.canRedo, isPending, onUndoRedo]);
 
   // Manejo de atajos de teclado globales
   useEffect(() => {
@@ -97,7 +99,7 @@ export function UndoRedoBar({ onUndoRedo }: { onUndoRedo: () => void }) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [history.canUndo, history.canRedo, isPending]);
+  }, [handleRedo, handleUndo]);
 
   // Si no hay nada en la pila de deshacer ni rehacer, no mostramos la barra flotante
   if (!history.canUndo && !history.canRedo) {

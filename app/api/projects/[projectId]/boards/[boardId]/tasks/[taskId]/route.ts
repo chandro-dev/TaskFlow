@@ -1,12 +1,8 @@
 import { TaskflowService } from "@/lib/application/taskflow-service";
-<<<<<<< HEAD
 import {
   requireProjectCoordinatorRouteUser,
   requireProjectMemberRouteUser,
 } from "@/lib/api/route-authorization";
-=======
-import { requireProjectMemberRouteUser } from "@/lib/api/route-authorization";
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 import { buildRouteErrorResponse } from "@/lib/api/route-errors";
 import type { TaskPriority, TaskSubtaskInput, TaskType } from "@/lib/domain/models";
 
@@ -66,11 +62,7 @@ export async function DELETE(
   const { projectId, boardId, taskId } = await context.params;
 
   try {
-<<<<<<< HEAD
     const currentUser = await requireProjectCoordinatorRouteUser(projectId);
-=======
-    const currentUser = await requireProjectMemberRouteUser(projectId);
->>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     await service.deleteTask({
       taskId,
       projectId,

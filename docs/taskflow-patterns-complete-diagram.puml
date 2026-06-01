@@ -1,0 +1,789 @@
+@startuml
+title Taskflow - Diagrama Completo de Entidades y Patrones de Diseno
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam wrapWidth 240
+skinparam maxMessageSize 180
+hide empty members
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #2f3a4a
+  ArrowColor #2f3a4a
+}
+
+legend right
+  Diagrama enfocado en la sustentacion de patrones.
+
+  Estereotipos principales:
+  <<Singleton>>, <<AbstractFactory>>, <<FactoryMethod>>,
+  <<Builder>>, <<Prototype>>, <<Facade>>, <<Composite>>,
+  <<Decorator>>, <<Proxy>>, <<Adapter>>, <<Bridge>>,
+  <<Observer>>, <<Subject>>, <<Port>>, <<Entity>>.
+
+  Las flechas continuas muestran composicion/herencia.
+  Las flechas punteadas muestran dependencia/uso.
+endlegend
+
+' ==========================================================
+' DOMAIN
+' ==========================================================
+
+package "Domain.Contracts" #EEF5FF {
+  interface IRepositroyFlow <<Port>> {
+    +loadSnapshot(): Promise<TaskflowSnapshot>
+    +registerUser(input: RegisterUserInput): Promise<RegisterUserResult>
+    +createProject(input: CreateProjectInput): Promise<CreateProjectResult>
+    +cloneProject(input: CloneProjectInput): Promise<CloneProjectResult>
+    +createBoard(input: CreateBoardInput): Promise<Board>
+    +createTask(input: CreateTaskInput): Promise<Task>
+    +updateTask(input: UpdateTaskInput): Promise<Task>
+    +cloneTask(input: CloneTaskInput): Promise<Task>
+    +moveTask(input: MoveTaskInput): Promise<Task>
+    +createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>
+    +createNotifications(input: CreateProjectNotificationInput[]): Promise<ProjectNotification[]>
+    +updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings>
+  }
+
+  interface TaskflowAuthProvider <<Port>> {
+    +authenticateWithPassword(input: PasswordAuthInput): Promise<AuthenticationResult>
+  }
+
+  class ProjectAccessPolicy <<Policy>> {
+    +canManage(project: Project, user: UserProfile): boolean
+    +canAccess(project: Project, user: UserProfile): boolean
+  }
+}
+
+package "Domain.Entities" #F6FBF6 {
+  class UserProfile <<Entity>> {
+    id: string
+    name: string
+    email: string
+    role: UserRole
+    themePreference: ThemeMode
+    isActive: boolean
+  }
+
+  class Project <<Entity>> {
+    id: string
+    name: string
+    description: string
+    state: ProjectState
+    ownerId: string
+    memberIds: string[]
+    boardIds: string[]
+  }
+
+  class Board <<Entity>> {
+    id: string
+    projectId: string
+    name: string
+    columns: BoardColumn[]
+  }
+
+  class BoardColumn <<Entity>> {
+    id: string
+    boardId: string
+    name: string
+    order: number
+    color: string
+    wipLimit: number?
+  }
+
+  class Task <<Entity>> {
+    id: string
+    projectId: string
+    boardId: string
+    columnId: string
+    title: string
+    priority: TaskPriority
+    type: TaskType
+    dueDate: string
+    estimateHours: number
+    spentHours: number
+    subtasks: Subtask[]
+    labels: Label[]
+    history: TaskHistoryEntry[]
+  }
+
+  class Subtask <<Entity>> {
+    id: string
+    title: string
+    isCompleted: boolean
+  }
+
+  class Label <<Entity>> {
+    id: string
+    name: string
+    color: string
+  }
+
+  class TaskHistoryEntry <<Entity>> {
+    id: string
+    actorId: string
+    action: string
+    occurredAt: string
+  }
+
+  class MemberInvitation <<Entity>> {
+    id: string
+    projectId: string
+    invitedUserId: string
+    status: InvitationStatus
+    channel: InvitationChannel
+    token: string
+  }
+
+  class ProjectNotification <<Entity>> {
+    id: string
+    projectId: string
+    recipientId: string
+    kind: NotificationKind
+    title: string
+    message: string
+    isRead: boolean
+  }
+
+  class SystemSettings <<Entity>> {
+    platformName: string
+    maxAttachmentMb: number
+    defaultTheme: ThemeMode
+  }
+
+  class TaskflowSnapshot <<Entity>> {
+    currentUser: UserProfile
+    users: UserProfile[]
+    projects: Project[]
+    boards: Board[]
+    tasks: Task[]
+    invitations: MemberInvitation[]
+    notifications: ProjectNotification[]
+  }
+}
+
+package "Domain.DTOs.Events" #FFF8E8 {
+  class ProjectNotificationEvent <<Event>> {
+    kind: NotificationKind
+    projectId: string
+    actorId: string
+    boardId: string?
+    taskId: string?
+  }
+
+  class CreateProjectNotificationInput <<DTO>> {
+    projectId: string
+    recipientId: string
+    actorId: string?
+    kind: NotificationKind
+    title: string
+    message: string
+    linkHref: string
+  }
+
+  class BoardTaskView <<ViewModel>> {
+    assignees: UserProfile[]
+    isOverdue: boolean
+    subtaskProgress: number
+  }
+}
+
+' ==========================================================
+' CREATIONAL PATTERNS
+' ==========================================================
+
+package "Patterns.Creational.Singleton" #F2EEFF {
+  class ThemeSingleton <<Singleton>> {
+    -instance: ThemeSingleton
+    -mode: ThemeMode
+    -effectiveMode: ResolvedThemeMode
+    +getInstance(): ThemeSingleton
+    +initialize(defaultMode: ThemeMode): ThemeSnapshot
+    +setMode(nextMode: ThemeMode): void
+    +subscribe(listener: ThemeListener): () => void
+  }
+
+  class MockTaskflowStore <<Singleton>> {
+    -instance: MockTaskflowStore
+    -snapshot: TaskflowSnapshot
+    +getInstance(): MockTaskflowStore
+    +loadSnapshot(): TaskflowSnapshot
+    +createProject(input: CreateProjectInput): CreateProjectResult
+    +createTask(input: CreateTaskInput): Task
+  }
+}
+
+package "Patterns.Creational.AbstractFactory" #F2EEFF {
+  interface ThemeFactory <<AbstractFactory>> {
+    +createPalette(): ThemePalette
+  }
+
+  class LightThemeFactory <<ConcreteFactory>> {
+    +createPalette(): ThemePalette
+  }
+
+  class DarkThemeFactory <<ConcreteFactory>> {
+    +createPalette(): ThemePalette
+  }
+
+  class ThemePalette <<Product>>
+  class ThemeArtifacts <<Product>>
+}
+
+package "Patterns.Creational.FactoryMethod" #F2EEFF {
+  abstract class TaskFactory <<FactoryMethod>> {
+    +create(input: TaskFactoryInput): Task
+    #defaultPriority(): TaskPriority
+  }
+  class BugTaskFactory <<ConcreteFactory>>
+  class FeatureTaskFactory <<ConcreteFactory>>
+  class ImprovementTaskFactory <<ConcreteFactory>>
+  class StandardTaskFactory <<ConcreteFactory>>
+
+  abstract class BoardFactory <<FactoryMethod>> {
+    +create(projectId: string, name?: string): BoardFactoryResult
+  }
+  class DefaultKanbanBoardFactory <<ConcreteFactory>>
+
+  abstract class UserProfileFactory <<FactoryMethod>> {
+    +create(input: RegisterUserInput): UserProfile
+  }
+  class DeveloperProfileFactory <<ConcreteFactory>>
+
+  abstract class InvitationFactory <<FactoryMethod>> {
+    +create(seed: InvitationSeed): MemberInvitation
+  }
+  class InAppInvitationFactory <<ConcreteFactory>>
+
+  interface NotificationComposer <<FactoryProduct>> {
+    +compose(event: ProjectNotificationEvent, snapshot: TaskflowSnapshot): CreateProjectNotificationInput[]
+  }
+  abstract class BaseNotificationComposer
+  class ProjectCreatedNotificationComposer <<ConcreteProduct>>
+  class ProjectUpdatedNotificationComposer <<ConcreteProduct>>
+  class BoardCreatedNotificationComposer <<ConcreteProduct>>
+  class TaskCreatedNotificationComposer <<ConcreteProduct>>
+  class MemberInvitedNotificationComposer <<ConcreteProduct>>
+  class MemberJoinedNotificationComposer <<ConcreteProduct>>
+}
+
+package "Patterns.Creational.Builder" #F2EEFF {
+  class UserRegistrationBuilder <<Builder>> {
+    +normalize(): this
+    +validate(): this
+    +build(): RegisterUserInput
+  }
+  class ProjectBuilder <<Builder>> {
+    +normalize(): this
+    +validate(): this
+    +buildProject(id: string): Project
+  }
+  class TaskBuilder <<Builder>> {
+    +withAssignee(userId: string): this
+    +withSubtask(title: string, isCompleted?: boolean): this
+    +withHistory(entry: TaskHistoryEntry): this
+    +build(): Task
+  }
+  class TaskUpdateBuilder <<Builder>> {
+    +withCoreFields(fields: UpdateTaskInput): this
+    +withAssignees(assigneeIds: string[]): this
+    +withSubtasks(subtasks: TaskSubtaskInput[]): this
+    +build(): Task
+  }
+  class MemberInvitationBuilder <<Builder>> {
+    +withMessage(message?: string): this
+    +asPending(): this
+    +asAccepted(): this
+    +refreshToken(): this
+    +build(): MemberInvitation
+  }
+  class ProjectNotificationBuilder <<Builder>> {
+    +normalize(): this
+    +asRead(readAt?: string): this
+    +build(id: string): ProjectNotification
+  }
+}
+
+package "Patterns.Creational.Prototype" #F2EEFF {
+  class TaskPrototype <<Prototype>> {
+    +clone(overrides?: Partial<Task>): Task
+  }
+  class SubtaskPrototype <<Prototype>> {
+    +clone(overrides?: Partial<Subtask>): Subtask
+  }
+  class ProjectPrototype <<Prototype>> {
+    +clone(overrides?: Partial<Project>): Project
+  }
+  class BoardPrototype <<Prototype>> {
+    +clone(overrides?: Partial<Board>): Board
+  }
+  class BoardColumnPrototype <<Prototype>> {
+    +clone(overrides?: Partial<BoardColumn>): BoardColumn
+  }
+  class InvitationPrototype <<Prototype>> {
+    +clone(overrides?: Partial<MemberInvitation>): MemberInvitation
+  }
+}
+
+' ==========================================================
+' STRUCTURAL PATTERNS
+' ==========================================================
+
+package "Patterns.Structural.Facade" #EFFFF7 {
+  class TaskflowService <<Facade>> {
+    -repository: IRepositroyFlow
+    -services: ApplicationServices
+    +createProject(input: CreateProjectInput, ownerId: string): Promise<CreateProjectResult>
+    +createBoard(input: CreateBoardInput, actorId: string): Promise<Board>
+    +createTask(input: CreateTaskInput): Promise<Task>
+    +getBoardPageData(projectId: string, boardId: string, filters: TaskFilters): Promise<BoardPageView>
+    +getWorkspaceReport(currentUser?: UserProfile): Promise<WorkspaceReportView>
+    +renderWorkspaceReport(format: ReportFormat, currentUser?: UserProfile): Promise<RenderedReport>
+    +login(input: PasswordAuthInput): Promise<AuthenticationResult>
+  }
+}
+
+package "Patterns.Structural.Composite" #EFFFF7 {
+  interface WorkItemComponent <<Composite>> {
+    +id: string
+    +title: string
+    +completedUnits(): number
+    +totalUnits(): number
+    +progress(): number
+  }
+
+  class TaskComposite <<Composite>> {
+    -task: Task
+    -children: WorkItemComponent[]
+    +completedUnits(): number
+    +totalUnits(): number
+    +progress(): number
+  }
+
+  class SubtaskLeaf <<Leaf>> {
+    -subtask: Subtask
+    +completedUnits(): number
+    +totalUnits(): number
+    +progress(): number
+  }
+}
+
+package "Patterns.Structural.Decorator" #EFFFF7 {
+  class BoardTaskDecorator <<Decorator>> {
+    -task: Task
+    -snapshot: TaskflowSnapshot
+    +decorate(): BoardTaskView
+  }
+}
+
+package "Patterns.Structural.Proxy" #EFFFF7 {
+  class RouteAuthorizationProxy <<Proxy>> {
+    -accessPolicy: ProjectAccessPolicy
+    +requireAdmin(user: UserProfile): UserProfile
+    +requireProjectMember(project: Project, user: UserProfile): UserProfile
+    +requireProjectManager(project: Project, user: UserProfile): UserProfile
+    +requireProjectCoordinator(project: Project, user: UserProfile): Promise<UserProfile>
+  }
+}
+
+package "Patterns.Structural.Adapter" #EFFFF7 {
+  class NotificationEventAdapter <<Adapter>> {
+    +toNotificationInputs(event: ProjectNotificationEvent, snapshot: TaskflowSnapshot): CreateProjectNotificationInput[]
+  }
+
+  class SupabaseTaskflowRepository <<Adapter>>
+  class MockTaskflowRepository <<Adapter>>
+}
+
+package "Patterns.Structural.Bridge" #EFFFF7 {
+  class ReportQueryService <<BridgeAbstraction>> {
+    -repository: IRepositroyFlow
+    +getWorkspaceReport(currentUser?: UserProfile): Promise<WorkspaceReportView>
+    +renderWorkspaceReport(format: ReportFormat, currentUser?: UserProfile): Promise<RenderedReport>
+  }
+
+  interface ReportRenderer <<BridgeImplementor>> {
+    +contentType: string
+    +extension: string
+    +render(document: ReportDocument): string
+  }
+
+  class HtmlReportRenderer <<ConcreteImplementor>>
+  class CsvReportRenderer <<ConcreteImplementor>>
+  class JsonReportRenderer <<ConcreteImplementor>>
+  class ReportDocument <<DTO>>
+  class WorkspaceReportView <<ViewModel>>
+  class RenderedReport <<DTO>>
+}
+
+' ==========================================================
+' BEHAVIORAL PATTERN
+' ==========================================================
+
+package "Patterns.Behavioral.Observer" #FFF0F0 {
+  interface ProjectEventSubscriber <<Observer>> {
+    +handle(event: ProjectNotificationEvent): Promise<void>
+  }
+
+  class ProjectEventPublisher <<Subject>> {
+    -subscribers: ProjectEventSubscriber[]
+    +publish(event: ProjectNotificationEvent): Promise<void>
+  }
+
+  class ProjectNotificationSubscriber <<ConcreteObserver>> {
+    -snapshotLoader: SnapshotLoader
+    -notificationAdapter: NotificationEventAdapter
+    +handle(event: ProjectNotificationEvent): Promise<void>
+  }
+}
+
+' ==========================================================
+' APPLICATION SERVICES
+' ==========================================================
+
+package "Application.Services" #F7F7F7 {
+  class SnapshotLoader {
+    -repository: IRepositroyFlow
+    +load(): Promise<TaskflowSnapshot>
+  }
+
+  class ProjectQueryService
+  class ProjectCommandService {
+    -repository: IRepositroyFlow
+    -notificationPublisher: ProjectEventPublisher
+    +createProject(input: CreateProjectInput, ownerId: string): Promise<CreateProjectResult>
+    +updateProject(input: UpdateProjectInput, actorId: string): Promise<Project>
+  }
+
+  class ProjectCloneService {
+    -repository: IRepositroyFlow
+    -notificationPublisher: ProjectEventPublisher
+    +cloneProject(input: CloneProjectRequestInput): Promise<CloneProjectResult>
+  }
+
+  class BoardCommandService {
+    -repository: IRepositroyFlow
+    -notificationPublisher: ProjectEventPublisher
+    +createBoard(input: CreateBoardInput, actorId: string): Promise<Board>
+  }
+
+  class TaskCommandService {
+    -repository: IRepositroyFlow
+    -notificationPublisher: ProjectEventPublisher
+    +createTask(input: CreateTaskInput): Promise<Task>
+  }
+
+  class TaskUpdateService
+  class TaskMoveService
+  class TaskDeleteService
+  class TaskCloneService
+  class InvitationQueryService
+  class InvitationCommandService {
+    -repository: IRepositroyFlow
+    -notificationPublisher: ProjectEventPublisher
+    +createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>
+    +acceptInvitation(token: string): Promise<MemberInvitation>
+  }
+  class NotificationQueryService
+  class NotificationCommandService
+  class WorkspaceQueryService
+  class SettingsCommandService
+  class ThemePreferenceCommandService
+  class AuthCommandService
+  class AuthQueryService
+  class SessionCommandService
+}
+
+' ==========================================================
+' INFRASTRUCTURE
+' ==========================================================
+
+package "Infrastructure.Supabase" #F0F7FF {
+  class SupabaseSnapshotQuery
+  class SupabaseAuthCommand
+  class SupabaseProjectCommand
+  class SupabaseBoardCommand
+  class SupabaseTaskCommand
+  class SupabaseInvitationCommand
+  class SupabaseNotificationCommand
+  class SupabaseSettingsCommand
+  class SupabaseAuthProvider
+}
+
+package "Infrastructure.Mock" #F0F7FF {
+  class MockAuthProvider
+}
+
+package "Next.App Entrypoints" #FFFFFF {
+  class "app/(workspace)/reports/page.tsx" as ReportsPage <<Page>>
+  class "app/api/reports/route.ts" as ReportsApi <<RouteHandler>>
+  class "app/api/projects/.../tasks/route.ts" as TasksApi <<RouteHandler>>
+  class "components/taskflow/task-card.tsx" as TaskCard <<Component>>
+}
+
+' ==========================================================
+' DOMAIN RELATIONSHIPS
+' ==========================================================
+
+Project "1" *-- "*" Board : owns
+Board "1" *-- "*" BoardColumn : columns
+Project "1" *-- "*" Task : contains
+Task "1" *-- "*" Subtask : composite data
+Task "1" o-- "*" Label : labels
+Task "1" o-- "*" TaskHistoryEntry : history
+Project "1" *-- "*" MemberInvitation : invitations
+Project "1" *-- "*" ProjectNotification : notifications
+TaskflowSnapshot *-- UserProfile
+TaskflowSnapshot *-- Project
+TaskflowSnapshot *-- Board
+TaskflowSnapshot *-- Task
+TaskflowSnapshot *-- MemberInvitation
+TaskflowSnapshot *-- ProjectNotification
+TaskflowSnapshot *-- SystemSettings
+
+BoardTaskView --|> Task
+
+' ==========================================================
+' PATTERN IMPLEMENTATION RELATIONSHIPS
+' ==========================================================
+
+' Singleton
+MockTaskflowRepository o--> MockTaskflowStore : uses single store
+ThemeSingleton ..> ThemeArtifacts : applies visual family
+
+' Abstract Factory
+LightThemeFactory ..|> ThemeFactory
+DarkThemeFactory ..|> ThemeFactory
+ThemeFactory ..> ThemePalette : creates
+ThemeFactory ..> ThemeArtifacts : feeds
+
+' Factory Method
+BugTaskFactory --|> TaskFactory
+FeatureTaskFactory --|> TaskFactory
+ImprovementTaskFactory --|> TaskFactory
+StandardTaskFactory --|> TaskFactory
+TaskFactory ..> Task : creates
+
+DefaultKanbanBoardFactory --|> BoardFactory
+BoardFactory ..> Board
+BoardFactory ..> BoardColumn
+
+DeveloperProfileFactory --|> UserProfileFactory
+UserProfileFactory ..> UserProfile
+
+InAppInvitationFactory --|> InvitationFactory
+InvitationFactory ..> MemberInvitation
+
+BaseNotificationComposer ..|> NotificationComposer
+ProjectCreatedNotificationComposer --|> BaseNotificationComposer
+ProjectUpdatedNotificationComposer --|> BaseNotificationComposer
+BoardCreatedNotificationComposer --|> BaseNotificationComposer
+TaskCreatedNotificationComposer --|> BaseNotificationComposer
+MemberInvitedNotificationComposer --|> BaseNotificationComposer
+MemberJoinedNotificationComposer --|> BaseNotificationComposer
+NotificationComposer ..> ProjectNotificationEvent
+NotificationComposer ..> CreateProjectNotificationInput
+
+' Builder
+UserRegistrationBuilder ..> UserProfile : normalized input
+ProjectBuilder ..> Project : builds
+TaskBuilder ..> Task : builds
+TaskUpdateBuilder ..> Task : rebuilds
+MemberInvitationBuilder ..> MemberInvitation : builds
+ProjectNotificationBuilder ..> ProjectNotification : builds
+
+' Prototype
+TaskPrototype ..> Task : clones
+SubtaskPrototype ..> Subtask : clones
+ProjectPrototype ..> Project : clones
+BoardPrototype ..> Board : clones
+BoardColumnPrototype ..> BoardColumn : clones
+InvitationPrototype ..> MemberInvitation : clones
+
+' Facade
+TaskflowService o--> ProjectQueryService
+TaskflowService o--> ProjectCommandService
+TaskflowService o--> ProjectCloneService
+TaskflowService o--> BoardCommandService
+TaskflowService o--> TaskCommandService
+TaskflowService o--> TaskUpdateService
+TaskflowService o--> TaskMoveService
+TaskflowService o--> TaskDeleteService
+TaskflowService o--> TaskCloneService
+TaskflowService o--> InvitationCommandService
+TaskflowService o--> NotificationCommandService
+TaskflowService o--> ReportQueryService
+TaskflowService o--> AuthCommandService
+TaskflowService o--> SessionCommandService
+
+' Composite
+TaskComposite ..|> WorkItemComponent
+SubtaskLeaf ..|> WorkItemComponent
+TaskComposite *-- "*" WorkItemComponent : children
+TaskComposite o--> Task
+SubtaskLeaf o--> Subtask
+
+' Decorator
+BoardTaskDecorator o--> Task
+BoardTaskDecorator o--> TaskflowSnapshot
+BoardTaskDecorator ..> BoardTaskView : decorates into
+BoardTaskDecorator ..> TaskComposite : uses progress
+TaskCard ..> BoardTaskView : renders decorated task
+
+' Proxy
+RouteAuthorizationProxy o--> ProjectAccessPolicy
+RouteAuthorizationProxy ..> UserProfile
+RouteAuthorizationProxy ..> Project
+TasksApi ..> RouteAuthorizationProxy : checks access before use case
+
+' Adapter
+SupabaseTaskflowRepository ..|> IRepositroyFlow
+MockTaskflowRepository ..|> IRepositroyFlow
+NotificationEventAdapter ..> NotificationComposer : adapts composer output
+NotificationEventAdapter ..> CreateProjectNotificationInput
+ProjectNotificationSubscriber o--> NotificationEventAdapter
+
+' Bridge
+ReportQueryService ..> IRepositroyFlow : data source
+ReportQueryService ..> ReportRenderer : bridge implementor
+HtmlReportRenderer ..|> ReportRenderer
+CsvReportRenderer ..|> ReportRenderer
+JsonReportRenderer ..|> ReportRenderer
+ReportRenderer ..> ReportDocument
+ReportQueryService ..> WorkspaceReportView
+ReportQueryService ..> RenderedReport
+ReportsPage ..> TaskflowService : getWorkspaceReport()
+ReportsApi ..> TaskflowService : renderWorkspaceReport()
+
+' Observer
+ProjectNotificationSubscriber ..|> ProjectEventSubscriber
+ProjectEventPublisher o--> "*" ProjectEventSubscriber
+ProjectEventPublisher ..> ProjectNotificationEvent
+ProjectCommandService ..> ProjectEventPublisher : publishes PROJECT_CREATED/UPDATED
+ProjectCloneService ..> ProjectEventPublisher : publishes PROJECT_CREATED
+BoardCommandService ..> ProjectEventPublisher : publishes BOARD_CREATED
+TaskCommandService ..> ProjectEventPublisher : publishes TASK_CREATED
+InvitationCommandService ..> ProjectEventPublisher : publishes MEMBER_INVITED/JOINED
+
+' ==========================================================
+' APPLICATION / INFRASTRUCTURE RELATIONSHIPS
+' ==========================================================
+
+SnapshotLoader ..> IRepositroyFlow
+ProjectQueryService ..> SnapshotLoader
+ProjectCommandService ..> IRepositroyFlow
+ProjectCloneService ..> IRepositroyFlow
+ProjectCloneService ..> ProjectPrototype
+ProjectCloneService ..> BoardPrototype
+ProjectCloneService ..> BoardColumnPrototype
+BoardCommandService ..> IRepositroyFlow
+TaskCommandService ..> IRepositroyFlow
+TaskUpdateService ..> IRepositroyFlow
+TaskUpdateService ..> TaskUpdateBuilder
+TaskCloneService ..> IRepositroyFlow
+TaskCloneService ..> TaskPrototype
+TaskCloneService ..> SubtaskPrototype
+InvitationCommandService ..> IRepositroyFlow
+InvitationCommandService ..> InvitationPrototype
+SettingsCommandService ..> IRepositroyFlow
+ThemePreferenceCommandService ..> IRepositroyFlow
+SessionCommandService ..> TaskflowAuthProvider
+
+SupabaseTaskflowRepository o--> SupabaseSnapshotQuery
+SupabaseTaskflowRepository o--> SupabaseAuthCommand
+SupabaseTaskflowRepository o--> SupabaseProjectCommand
+SupabaseTaskflowRepository o--> SupabaseBoardCommand
+SupabaseTaskflowRepository o--> SupabaseTaskCommand
+SupabaseTaskflowRepository o--> SupabaseInvitationCommand
+SupabaseTaskflowRepository o--> SupabaseNotificationCommand
+SupabaseTaskflowRepository o--> SupabaseSettingsCommand
+
+SupabaseAuthProvider ..|> TaskflowAuthProvider
+MockAuthProvider ..|> TaskflowAuthProvider
+
+SupabaseAuthCommand ..> UserRegistrationBuilder
+SupabaseAuthCommand ..> UserProfileFactory
+SupabaseProjectCommand ..> ProjectBuilder
+SupabaseProjectCommand ..> BoardFactory
+SupabaseBoardCommand ..> BoardFactory
+SupabaseTaskCommand ..> TaskFactory
+SupabaseTaskCommand ..> TaskBuilder
+SupabaseInvitationCommand ..> InvitationFactory
+SupabaseInvitationCommand ..> MemberInvitationBuilder
+SupabaseInvitationCommand ..> InvitationPrototype
+SupabaseNotificationCommand ..> ProjectNotificationBuilder
+
+MockTaskflowStore ..> UserRegistrationBuilder
+MockTaskflowStore ..> ProjectBuilder
+MockTaskflowStore ..> BoardFactory
+MockTaskflowStore ..> TaskFactory
+MockTaskflowStore ..> TaskBuilder
+MockTaskflowStore ..> TaskPrototype
+MockTaskflowStore ..> SubtaskPrototype
+MockTaskflowStore ..> InvitationFactory
+MockTaskflowStore ..> MemberInvitationBuilder
+MockTaskflowStore ..> InvitationPrototype
+
+' ==========================================================
+' NOTES
+' ==========================================================
+
+note right of TaskflowService
+FACADE
+Entrada unica para paginas y rutas API.
+Oculta repositorio, servicios internos,
+eventos y reportes.
+end note
+
+note right of TaskComposite
+COMPOSITE
+La tarea compuesta calcula progreso
+sumando sus subtareas hoja.
+end note
+
+note right of BoardTaskDecorator
+DECORATOR
+Enriquece Task con:
+- responsables hidratados
+- vencimiento
+- progreso de subtareas
+sin modificar la entidad base.
+end note
+
+note right of RouteAuthorizationProxy
+PROXY
+Controla acceso antes de ejecutar
+casos de uso sensibles.
+Se complementa con RLS en Supabase.
+end note
+
+note right of NotificationEventAdapter
+ADAPTER
+Traduce eventos de dominio a inputs
+persistibles de notificacion.
+end note
+
+note right of ReportQueryService
+BRIDGE
+La abstraccion arma el reporte.
+Los renderers cambian el formato:
+HTML, CSV o JSON.
+end note
+
+note right of ProjectEventPublisher
+OBSERVER
+Los comandos publican eventos.
+El subscriber crea notificaciones
+sin acoplar los comandos a esa logica.
+end note
+
+note bottom of IRepositroyFlow
+Puerto del dominio.
+Supabase y Mock son adaptadores
+intercambiables.
+end note
+
+@enduml

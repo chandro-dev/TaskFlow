@@ -1,0 +1,288 @@
+@startuml
+title Taskflow - Patrones de Diseño para Exposición
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam wrapWidth 220
+skinparam maxMessageSize 180
+hide empty members
+
+legend right
+  Diagrama orientado a exposición.
+  Muestra solo clases, interfaces y abstract classes
+  que evidencian patrones de diseño o colaboran
+  directamente en esos flujos.
+endlegend
+
+package "Domain" {
+  interface IRepositroyFlow <<interface>>
+  interface TaskflowAuthProvider <<interface>>
+
+  class ProjectAccessPolicy
+
+  class Project <<entity>>
+  class Board <<entity>>
+  class BoardColumn <<entity>>
+  class Task <<entity>>
+  class Subtask <<entity>>
+  class MemberInvitation <<entity>>
+  class ProjectNotification <<entity>>
+  class TaskflowSnapshot <<entity>>
+}
+
+package "Patterns.Singleton" {
+  class ThemeSingleton <<Singleton>>
+  class MockTaskflowStore <<Singleton>>
+}
+
+package "Patterns.AbstractFactory" {
+  interface ThemeFactory <<AbstractFactory>>
+  interface ThemePalette <<product>>
+  interface ThemeArtifacts <<product>>
+  class LightThemeFactory <<ConcreteFactory>>
+  class DarkThemeFactory <<ConcreteFactory>>
+}
+
+package "Patterns.Builder" {
+  class UserRegistrationBuilder <<Builder>>
+  class ProjectBuilder <<Builder>>
+  class TaskBuilder <<Builder>>
+  class TaskUpdateBuilder <<Builder>>
+  class MemberInvitationBuilder <<Builder>>
+  class ProjectNotificationBuilder <<Builder>>
+}
+
+package "Patterns.FactoryMethod" {
+  abstract class TaskFactory <<FactoryMethod>>
+  class BugTaskFactory <<ConcreteFactory>>
+  class FeatureTaskFactory <<ConcreteFactory>>
+  class ImprovementTaskFactory <<ConcreteFactory>>
+  class StandardTaskFactory <<ConcreteFactory>>
+
+  abstract class BoardFactory <<FactoryMethod>>
+  class DefaultKanbanBoardFactory <<ConcreteFactory>>
+
+  abstract class UserProfileFactory <<FactoryMethod>>
+  class DeveloperProfileFactory <<ConcreteFactory>>
+
+  abstract class InvitationFactory <<FactoryMethod>>
+  class InAppInvitationFactory <<ConcreteFactory>>
+
+  interface NotificationComposer <<FactoryProduct>>
+  abstract class BaseNotificationComposer
+  class ProjectCreatedNotificationComposer
+  class ProjectUpdatedNotificationComposer
+  class BoardCreatedNotificationComposer
+  class TaskCreatedNotificationComposer
+  class MemberInvitedNotificationComposer
+  class MemberJoinedNotificationComposer
+}
+
+package "Patterns.Prototype" {
+  class TaskPrototype <<Prototype>>
+  class SubtaskPrototype <<Prototype>>
+  class ProjectPrototype <<Prototype>>
+  class BoardPrototype <<Prototype>>
+  class BoardColumnPrototype <<Prototype>>
+  class InvitationPrototype <<Prototype>>
+}
+
+package "Patterns.Observer" {
+  interface ProjectEventSubscriber <<Observer>>
+  class ProjectEventPublisher <<Subject>>
+  class ProjectNotificationSubscriber <<ConcreteObserver>>
+}
+
+package "Application" {
+  class TaskflowService <<Facade>>
+  class SnapshotLoader
+
+  class ProjectCommandService
+  class ProjectCloneService
+  class BoardCommandService
+  class TaskCommandService
+  class TaskUpdateService
+  class TaskCloneService
+  class InvitationCommandService
+}
+
+package "Infrastructure" {
+  class MockTaskflowRepository
+  class SupabaseTaskflowRepository
+
+  class SupabaseAuthCommand
+  class SupabaseProjectCommand
+  class SupabaseBoardCommand
+  class SupabaseTaskCommand
+  class SupabaseInvitationCommand
+  class SupabaseNotificationCommand
+  class SupabaseSnapshotQuery
+
+  class MockAuthProvider
+  class SupabaseAuthProvider
+}
+
+' Domain structure
+Project "1" *-- "*" Board
+Board "1" *-- "*" BoardColumn
+Project "1" *-- "*" Task
+Task "1" *-- "*" Subtask
+Project "1" *-- "*" MemberInvitation
+Project "1" *-- "*" ProjectNotification
+TaskflowSnapshot *-- Project
+TaskflowSnapshot *-- Board
+TaskflowSnapshot *-- Task
+TaskflowSnapshot *-- MemberInvitation
+TaskflowSnapshot *-- ProjectNotification
+
+' Contract implementations
+MockTaskflowRepository ..|> IRepositroyFlow
+SupabaseTaskflowRepository ..|> IRepositroyFlow
+MockAuthProvider ..|> TaskflowAuthProvider
+SupabaseAuthProvider ..|> TaskflowAuthProvider
+
+' Singleton
+ThemeSingleton ..> ThemeFactory : usa
+MockTaskflowRepository o--> MockTaskflowStore
+
+' Abstract Factory
+LightThemeFactory ..|> ThemeFactory
+DarkThemeFactory ..|> ThemeFactory
+ThemeFactory ..> ThemePalette
+ThemeFactory ..> ThemeArtifacts
+
+' Builder
+UserRegistrationBuilder ..> Project : input normalizado
+ProjectBuilder ..> Project
+TaskBuilder ..> Task
+TaskUpdateBuilder ..> Task
+MemberInvitationBuilder ..> MemberInvitation
+ProjectNotificationBuilder ..> ProjectNotification
+
+' Factory Method
+BugTaskFactory --|> TaskFactory
+FeatureTaskFactory --|> TaskFactory
+ImprovementTaskFactory --|> TaskFactory
+StandardTaskFactory --|> TaskFactory
+TaskFactory ..> Task
+
+DefaultKanbanBoardFactory --|> BoardFactory
+BoardFactory ..> Board
+BoardFactory ..> BoardColumn
+
+DeveloperProfileFactory --|> UserProfileFactory
+InAppInvitationFactory --|> InvitationFactory
+InvitationFactory ..> MemberInvitation
+
+BaseNotificationComposer ..|> NotificationComposer
+ProjectCreatedNotificationComposer --|> BaseNotificationComposer
+ProjectUpdatedNotificationComposer --|> BaseNotificationComposer
+BoardCreatedNotificationComposer --|> BaseNotificationComposer
+TaskCreatedNotificationComposer --|> BaseNotificationComposer
+MemberInvitedNotificationComposer --|> BaseNotificationComposer
+MemberJoinedNotificationComposer --|> BaseNotificationComposer
+
+' Prototype
+TaskPrototype ..> Task
+SubtaskPrototype ..> Subtask
+ProjectPrototype ..> Project
+BoardPrototype ..> Board
+BoardColumnPrototype ..> BoardColumn
+InvitationPrototype ..> MemberInvitation
+
+' Observer
+ProjectNotificationSubscriber ..|> ProjectEventSubscriber
+ProjectEventPublisher o--> ProjectEventSubscriber
+
+' Application orchestration
+TaskflowService o--> ProjectCommandService
+TaskflowService o--> ProjectCloneService
+TaskflowService o--> BoardCommandService
+TaskflowService o--> TaskCommandService
+TaskflowService o--> TaskUpdateService
+TaskflowService o--> TaskCloneService
+TaskflowService o--> InvitationCommandService
+
+SnapshotLoader ..> IRepositroyFlow
+ProjectCommandService ..> IRepositroyFlow
+ProjectCloneService ..> IRepositroyFlow
+BoardCommandService ..> IRepositroyFlow
+TaskCommandService ..> IRepositroyFlow
+TaskUpdateService ..> IRepositroyFlow
+TaskCloneService ..> IRepositroyFlow
+InvitationCommandService ..> IRepositroyFlow
+
+ProjectCommandService ..> ProjectEventPublisher
+ProjectCloneService ..> ProjectEventPublisher
+BoardCommandService ..> ProjectEventPublisher
+InvitationCommandService ..> ProjectEventPublisher
+
+ProjectCloneService ..> ProjectPrototype
+ProjectCloneService ..> BoardPrototype
+ProjectCloneService ..> BoardColumnPrototype
+
+TaskCloneService ..> TaskPrototype
+TaskCloneService ..> SubtaskPrototype
+TaskUpdateService ..> TaskUpdateBuilder
+
+ProjectNotificationSubscriber ..> NotificationComposer
+ProjectNotificationSubscriber ..> SnapshotLoader
+
+' Infrastructure collaboration
+SupabaseTaskflowRepository o--> SupabaseSnapshotQuery
+SupabaseTaskflowRepository o--> SupabaseAuthCommand
+SupabaseTaskflowRepository o--> SupabaseProjectCommand
+SupabaseTaskflowRepository o--> SupabaseBoardCommand
+SupabaseTaskflowRepository o--> SupabaseTaskCommand
+SupabaseTaskflowRepository o--> SupabaseInvitationCommand
+SupabaseTaskflowRepository o--> SupabaseNotificationCommand
+
+SupabaseAuthCommand ..> UserRegistrationBuilder
+SupabaseProjectCommand ..> ProjectBuilder
+SupabaseProjectCommand ..> BoardFactory
+SupabaseBoardCommand ..> BoardFactory
+SupabaseTaskCommand ..> TaskFactory
+SupabaseTaskCommand ..> TaskBuilder
+SupabaseInvitationCommand ..> InvitationFactory
+SupabaseInvitationCommand ..> MemberInvitationBuilder
+SupabaseInvitationCommand ..> InvitationPrototype
+SupabaseNotificationCommand ..> ProjectNotificationBuilder
+
+MockTaskflowStore ..> ProjectBuilder
+MockTaskflowStore ..> TaskBuilder
+MockTaskflowStore ..> TaskFactory
+MockTaskflowStore ..> TaskPrototype
+MockTaskflowStore ..> InvitationPrototype
+
+note right of ThemeSingleton
+Singleton del cliente.
+Una sola fuente de verdad para el tema.
+end note
+
+note right of DefaultKanbanBoardFactory
+Factory Method para crear
+tableros y columnas iniciales.
+end note
+
+note right of TaskCloneService
+Caso de uso que evidencia Prototype:
+clona tarea y subtareas
+aplicando overrides tecnicos.
+end note
+
+note right of ProjectNotificationSubscriber
+Observer real del sistema.
+Reacciona a eventos publicados
+por comandos de proyecto, clonacion,
+tablero e invitaciones.
+end note
+
+note bottom of IRepositroyFlow
+Puerto principal del dominio.
+Evidencia DIP y desacople entre
+aplicacion e infraestructura.
+end note
+
+@enduml

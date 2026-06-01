@@ -5,7 +5,10 @@ import type {
 } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
+<<<<<<< HEAD
 import { ProjectAccessPolicy } from "@/lib/domain/policies/project-access-policy";
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 import {
   buildProjectMembers,
   buildProjectCard,
@@ -16,7 +19,10 @@ import {
 
 export class ProjectQueryService {
   private readonly snapshotLoader: SnapshotLoader;
+<<<<<<< HEAD
   private readonly accessPolicy = new ProjectAccessPolicy();
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
   constructor(repository: IRepositroyFlow) {
     this.snapshotLoader = new SnapshotLoader(repository);
@@ -102,9 +108,12 @@ export class ProjectQueryService {
     const boardTasks = snapshot.tasks
       .filter((task) => task.projectId === projectId && task.boardId === boardId)
       .filter((task) => isTaskMatching(task, filters));
+<<<<<<< HEAD
     const currentMembership = snapshot.projectMembers.find(
       (member) => member.projectId === project.id && member.userId === activeUser.id,
     );
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
     return {
       project,
@@ -124,11 +133,14 @@ export class ProjectQueryService {
       projectMembers: buildProjectMembers(project, snapshot),
       availableLabels: collectProjectLabels(snapshot, projectId),
       filters,
+<<<<<<< HEAD
       permissions: this.accessPolicy.buildActionPermissions(
         project,
         activeUser,
         currentMembership?.memberRole,
       ),
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     };
   }
 

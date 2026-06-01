@@ -78,7 +78,11 @@ export class SupabaseBoardCommand {
       name: input.name.trim(),
       position: board.columns.length + 1,
       color: fallback?.color ?? "#b8c2d4",
+<<<<<<< HEAD
       wip_limit: input.wipLimit ?? fallback?.wipLimit ?? null,
+=======
+      wip_limit: fallback?.wipLimit ?? null,
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     });
 
     if (error) {
@@ -95,7 +99,10 @@ export class SupabaseBoardCommand {
       .from("board_columns")
       .update({
         name: input.name.trim(),
+<<<<<<< HEAD
         wip_limit: input.wipLimit ?? null,
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       })
       .eq("id", input.columnId)
       .eq("board_id", input.boardId);

@@ -7,17 +7,15 @@ skinparam linetype ortho
 skinparam classAttributeIconSize 0
 skinparam wrapWidth 220
 skinparam maxMessageSize 180
-skinparam dpi 300
 
 hide empty members
 
 legend right
   Este diagrama muestra las clases, interfaces y abstract classes
-  que estructuran la arquitectura actual y los patrones de diseno
-  implementados en Taskflow.
+  que estructuran la arquitectura actual.
 
   No incluye route handlers de Next.js ni componentes React funcionales,
-  salvo cuando una clase de patron protege o adapta esas entradas.
+  porque no son clases UML.
 endlegend
 
 package "Domain" {
@@ -32,20 +30,6 @@ package "Domain" {
   class BoardColumn <<entity>>
   class Task <<entity>>
   class Subtask <<entity>>
-  class Label <<entity>>
-  class TaskComment <<entity>>
-  class TaskAttachment <<entity>>
-  class TaskHistoryEntry <<entity>>
-  class ProjectMember <<entity>>
-  class BoardTaskView <<view>>
-  class BoardColumnView <<view>>
-  class BoardPageView <<view>>
-  class ProjectCardView <<view>>
-  class ProjectMemberView <<view>>
-  class NotificationCenterView <<view>>
-  class ProjectNotificationView <<view>>
-  class SettingsView <<view>>
-  class ProjectInvitationView <<view>>
   class MemberInvitation <<entity>>
   class ProjectNotification <<entity>>
   class SystemSettings <<entity>>
@@ -59,7 +43,6 @@ package "Shared" {
 
 package "Patterns.Singleton" {
   class ThemeSingleton
-  class MockTaskflowStore
 }
 
 package "Patterns.AbstractFactory" {
@@ -119,36 +102,8 @@ package "Patterns.Observer" {
   class ProjectEventPublisher
 }
 
-package "Patterns.Composite" {
-  interface WorkItemComponent <<component>>
-  class TaskComposite <<composite>>
-  class SubtaskLeaf <<leaf>>
-}
-
-package "Patterns.Decorator" {
-  class BoardTaskDecorator <<decorator>>
-}
-
-package "Patterns.Proxy" {
-  class RouteAuthorizationProxy <<proxy>>
-}
-
-package "Patterns.Adapter" {
-  class NotificationEventAdapter <<adapter>>
-  class SupabaseTaskflowRepository <<adapter>>
-  class MockTaskflowRepository <<adapter>>
-}
-
-package "Patterns.Bridge" {
-  interface ReportDocument <<abstraction>>
-  interface ReportRenderer <<implementor>>
-  class HtmlReportRenderer
-  class CsvReportRenderer
-  class JsonReportRenderer
-}
-
 package "Application" {
-  class TaskflowService <<Facade>>
+  class TaskflowService
   class SnapshotLoader
 
   class AuthQueryService
@@ -175,17 +130,18 @@ package "Application" {
   class NotificationCommandService
   class ProjectNotificationSubscriber
 
-  class ReportQueryService
-
   class SettingsCommandService
   class ThemePreferenceCommandService
 }
 
 package "Infrastructure.Mock" {
+  class MockTaskflowRepository
+  class MockTaskflowStore
   class MockAuthProvider
 }
 
 package "Infrastructure.Supabase" {
+  class SupabaseTaskflowRepository
   class SupabaseSnapshotQuery
   class SupabaseAuthCommand
   class SupabaseProjectCommand
@@ -202,23 +158,6 @@ Project "1" *-- "*" Board
 Board "1" *-- "*" BoardColumn
 Project "1" *-- "*" Task
 Task "1" *-- "*" Subtask
-Task "1" o-- "*" Label
-Task "1" o-- "*" TaskComment
-Task "1" o-- "*" TaskAttachment
-Task "1" o-- "*" TaskHistoryEntry
-Project "1" o-- "*" ProjectMember
-BoardTaskView --|> Task
-BoardColumnView --|> BoardColumn
-BoardColumnView *-- "*" BoardTaskView
-BoardPageView *-- Project
-BoardPageView *-- Board
-BoardPageView *-- "*" BoardColumnView
-ProjectCardView ..> Project
-ProjectMemberView ..> ProjectMember
-ProjectNotificationView --|> ProjectNotification
-NotificationCenterView *-- "*" ProjectNotificationView
-SettingsView *-- SystemSettings
-ProjectInvitationView --|> MemberInvitation
 Project "1" *-- "*" MemberInvitation
 Project "1" *-- "*" ProjectNotification
 UserProfile "1" -- "*" Project : owner/member >
@@ -226,7 +165,6 @@ UserProfile "1" -- "*" Task : assignee >
 TaskflowSnapshot *-- UserProfile
 TaskflowSnapshot *-- SystemSettings
 TaskflowSnapshot *-- Project
-TaskflowSnapshot *-- ProjectMember
 TaskflowSnapshot *-- Board
 TaskflowSnapshot *-- Task
 TaskflowSnapshot *-- MemberInvitation
@@ -236,6 +174,8 @@ TaskflowSnapshot *-- ProjectNotification
 UnauthorizedRouteError --|> HttpError
 
 ' Repository/auth contracts
+MockTaskflowRepository ..|> IRepositroyFlow
+SupabaseTaskflowRepository ..|> IRepositroyFlow
 MockAuthProvider ..|> TaskflowAuthProvider
 SupabaseAuthProvider ..|> TaskflowAuthProvider
 
@@ -245,7 +185,6 @@ LightThemeFactory ..|> ThemeFactory
 DarkThemeFactory ..|> ThemeFactory
 ThemeFactory ..> ThemePalette
 ThemeSingleton ..> ThemeArtifacts : applies CSS tokens
-MockTaskflowStore ..> TaskflowSnapshot : keeps one in-memory state
 
 ' Builder usage
 UserRegistrationBuilder ..> UserProfile
@@ -295,40 +234,6 @@ ProjectNotificationSubscriber ..|> ProjectEventSubscriber
 ProjectEventPublisher o--> ProjectEventSubscriber
 ProjectNotificationSubscriber ..> NotificationComposer : composes notifications
 
-' Composite
-TaskComposite ..|> WorkItemComponent
-SubtaskLeaf ..|> WorkItemComponent
-TaskComposite o--> WorkItemComponent : children
-TaskComposite ..> Task
-SubtaskLeaf ..> Subtask
-
-' Decorator
-BoardTaskDecorator ..> Task
-BoardTaskDecorator ..> TaskflowSnapshot
-BoardTaskDecorator ..> TaskComposite : calculates progress
-BoardTaskDecorator ..> BoardTaskView : returns decorated view
-
-' Proxy
-RouteAuthorizationProxy ..> ProjectAccessPolicy : checks permissions
-RouteAuthorizationProxy ..> HttpError : blocks invalid access
-RouteAuthorizationProxy ..> Project
-RouteAuthorizationProxy ..> UserProfile
-
-' Adapter
-NotificationEventAdapter ..> NotificationComposer : adapts event to inputs
-NotificationEventAdapter ..> TaskflowSnapshot
-ProjectNotificationSubscriber ..> NotificationEventAdapter : adapts domain event
-MockTaskflowRepository ..|> IRepositroyFlow
-SupabaseTaskflowRepository ..|> IRepositroyFlow
-
-' Bridge
-HtmlReportRenderer ..|> ReportRenderer
-CsvReportRenderer ..|> ReportRenderer
-JsonReportRenderer ..|> ReportRenderer
-ReportRenderer ..> ReportDocument
-ReportQueryService ..> ReportDocument : builds abstraction
-ReportQueryService ..> ReportRenderer : renders through implementor
-
 ' Application layer
 TaskflowService o--> AuthQueryService
 TaskflowService o--> AuthCommandService
@@ -347,7 +252,6 @@ TaskflowService o--> InvitationQueryService
 TaskflowService o--> InvitationCommandService
 TaskflowService o--> NotificationQueryService
 TaskflowService o--> NotificationCommandService
-TaskflowService o--> ReportQueryService
 TaskflowService o--> SettingsCommandService
 TaskflowService o--> ThemePreferenceCommandService
 
@@ -362,9 +266,6 @@ ProjectCloneService ..> SnapshotLoader
 InvitationQueryService ..> IRepositroyFlow
 InvitationQueryService ..> SnapshotLoader
 NotificationQueryService ..> SnapshotLoader
-ReportQueryService ..> IRepositroyFlow
-ReportQueryService ..> SnapshotLoader
-ReportQueryService ..> ProjectAccessPolicy
 SettingsCommandService ..> IRepositroyFlow
 ThemePreferenceCommandService ..> IRepositroyFlow
 NotificationCommandService ..> IRepositroyFlow
@@ -379,6 +280,7 @@ TaskUpdateService ..> TaskUpdateBuilder
 
 ProjectCommandService ..> IRepositroyFlow
 ProjectCommandService ..> ProjectEventPublisher
+ProjectCommandService ..> ProjectAccessPolicy
 
 ProjectCloneService ..> ProjectBuilder
 ProjectCloneService ..> ProjectPrototype
@@ -390,13 +292,11 @@ BoardCommandService ..> IRepositroyFlow
 BoardCommandService ..> ProjectEventPublisher
 
 TaskCommandService ..> IRepositroyFlow
-TaskCommandService ..> ProjectEventPublisher
 
 TaskMoveService ..> IRepositroyFlow
 
 InvitationCommandService ..> IRepositroyFlow
 InvitationCommandService ..> ProjectEventPublisher
-InvitationCommandService ..> InvitationQueryService
 InvitationCommandService ..> InvitationCreationGuard
 
 ProjectNotificationSubscriber ..> IRepositroyFlow
@@ -445,30 +345,6 @@ note bottom of ThemeSingleton
 Singleton global del cliente.
 Mantiene la preferencia elegida y
 el modo efectivo resuelto contra el sistema.
-end note
-
-note bottom of MockTaskflowStore
-Singleton de infraestructura mock.
-Comparte un unico snapshot en memoria
-durante la ejecucion de desarrollo/demo.
-end note
-
-note bottom of BoardTaskDecorator
-Decorator de tablero.
-Parte de Task y devuelve BoardTaskView
-con responsables, vencimiento y progreso.
-end note
-
-note bottom of RouteAuthorizationProxy
-Proxy de seguridad para rutas.
-Valida usuario, rol y acceso al proyecto
-antes de ejecutar servicios sensibles.
-end note
-
-note bottom of ReportRenderer
-Bridge de reportes.
-ReportQueryService arma el documento y
-el renderer decide HTML, CSV o JSON.
 end note
 
 note bottom of IRepositroyFlow

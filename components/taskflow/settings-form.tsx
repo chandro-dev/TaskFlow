@@ -77,6 +77,7 @@ export function SettingsForm({
     <form onSubmit={onSubmit} className="space-y-5">
       {canManageSystemSettings ? (
         <>
+<<<<<<< HEAD
           <div className="space-y-2">
             <label
               htmlFor="platformName"
@@ -135,6 +136,28 @@ export function SettingsForm({
               />
             </div>
           </div>
+=======
+          <input
+            value={form.platformName}
+            onChange={(event) => updateField("platformName", event.target.value)}
+            className="taskflow-input"
+            required
+          />
+          <input
+            type="number"
+            min="1"
+            value={form.maxAttachmentMb}
+            onChange={(event) => updateField("maxAttachmentMb", event.target.value)}
+            className="taskflow-input"
+            required
+          />
+          <textarea
+            value={form.passwordPolicy}
+            onChange={(event) => updateField("passwordPolicy", event.target.value)}
+            className="taskflow-input min-h-28 resize-none"
+            required
+          />
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
         </>
       ) : (
         <div className="rounded-2xl bg-[color:var(--color-surface-muted)] px-4 py-3 text-sm leading-7 text-[color:var(--color-text-secondary)]">
@@ -143,6 +166,7 @@ export function SettingsForm({
         </div>
       )}
 
+<<<<<<< HEAD
       <div className="space-y-2">
         <label
           htmlFor="defaultTheme"
@@ -163,6 +187,17 @@ export function SettingsForm({
           <option value="dark">Oscuro</option>
         </select>
       </div>
+=======
+      <select
+        value={form.defaultTheme}
+        onChange={(event) => updateField("defaultTheme", event.target.value as ThemeMode)}
+        className="taskflow-input"
+      >
+        <option value="system">Sistema</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
       {error ? (
         <div className="rounded-2xl bg-[color:rgba(217,83,111,0.12)] px-4 py-3 text-sm text-[color:var(--color-danger)]">

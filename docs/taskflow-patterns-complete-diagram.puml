@@ -35,35 +35,17 @@ endlegend
 package "Domain.Contracts" #EEF5FF {
   interface IRepositroyFlow <<Port>> {
     +loadSnapshot(): Promise<TaskflowSnapshot>
-    +findUserById(userId: string): Promise<UserProfile?>
-    +findUserByEmail(email: string): Promise<UserProfile?>
     +registerUser(input: RegisterUserInput): Promise<RegisterUserResult>
     +createProject(input: CreateProjectInput): Promise<CreateProjectResult>
     +cloneProject(input: CloneProjectInput): Promise<CloneProjectResult>
-    +updateProject(input: UpdateProjectInput): Promise<Project>
-    +deleteProject(projectId: string): Promise<void>
-    +removeProjectMember(projectId: string, memberId: string): Promise<Project>
-    +updateProjectMemberRole(projectId: string, memberId: string, memberRole: UserRole): Promise<Project>
     +createBoard(input: CreateBoardInput): Promise<Board>
-    +createBoardColumn(input: CreateBoardColumnInput): Promise<Board>
-    +updateBoardColumn(input: UpdateBoardColumnInput): Promise<Board>
-    +reorderBoardColumns(input: ReorderBoardColumnsInput): Promise<Board>
-    +deleteBoardColumn(input: DeleteBoardColumnInput): Promise<Board>
     +createTask(input: CreateTaskInput): Promise<Task>
     +updateTask(input: UpdateTaskInput): Promise<Task>
-    +deleteTask(input: DeleteTaskInput): Promise<void>
     +cloneTask(input: CloneTaskInput): Promise<Task>
     +moveTask(input: MoveTaskInput): Promise<Task>
     +createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>
-    +updateInvitationStatus(input: UpdateInvitationStatusInput): Promise<MemberInvitation>
-    +resendInvitation(invitationId: string): Promise<MemberInvitation>
-    +findInvitationByToken(token: string): Promise<MemberInvitation?>
     +createNotifications(input: CreateProjectNotificationInput[]): Promise<ProjectNotification[]>
-    +markNotificationRead(notificationId: string, recipientId: string): Promise<ProjectNotification>
-    +markAllNotificationsRead(recipientId: string): Promise<void>
-    +clearNotifications(recipientId: string): Promise<void>
     +updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings>
-    +updateUserThemePreference(userId: string, mode: ThemeMode): Promise<UserProfile>
   }
 
   interface TaskflowAuthProvider <<Port>> {
@@ -175,33 +157,11 @@ package "Domain.Entities" #F6FBF6 {
   class TaskflowSnapshot <<Entity>> {
     currentUser: UserProfile
     users: UserProfile[]
-    settings: SystemSettings
     projects: Project[]
-    projectMembers: ProjectMember[]
     boards: Board[]
     tasks: Task[]
     invitations: MemberInvitation[]
     notifications: ProjectNotification[]
-  }
-
-  class ProjectMember <<Entity>> {
-    projectId: string
-    userId: string
-    memberRole: UserRole
-    invitedBy?: string
-  }
-
-  class TaskComment <<Entity>> {
-    id: string
-    authorId: string
-    content: string
-  }
-
-  class TaskAttachment <<Entity>> {
-    id: string
-    name: string
-    url: string
-    sizeMb: number
   }
 }
 
@@ -224,32 +184,11 @@ package "Domain.DTOs.Events" #FFF8E8 {
     linkHref: string
   }
 
-  class CreateProjectInputWithoutOwner <<DTO>> {
-    name: string
-    description: string
-    startDate: string
-    endDate: string
-    state?: ProjectState
-  }
-
   class BoardTaskView <<ViewModel>> {
     assignees: UserProfile[]
     isOverdue: boolean
     subtaskProgress: number
   }
-
-  class BoardColumnView <<ViewModel>> {
-    tasks: BoardTaskView[]
-  }
-
-  class BoardPageView <<ViewModel>>
-  class ProjectCardView <<ViewModel>>
-  class ProjectMemberView <<ViewModel>>
-  class BoardsPageView <<ViewModel>>
-  class SettingsView <<ViewModel>>
-  class NotificationCenterView <<ViewModel>>
-  class ProjectNotificationView <<ViewModel>>
-  class ProjectInvitationView <<ViewModel>>
 }
 
 ' ==========================================================
@@ -290,8 +229,8 @@ package "Patterns.Creational.AbstractFactory" #F2EEFF {
     +createPalette(): ThemePalette
   }
 
-  interface ThemePalette <<Product>>
-  interface ThemeArtifacts <<Product>>
+  class ThemePalette <<Product>>
+  class ThemeArtifacts <<Product>>
 }
 
 package "Patterns.Creational.FactoryMethod" #F2EEFF {
@@ -397,46 +336,13 @@ package "Patterns.Structural.Facade" #EFFFF7 {
   class TaskflowService <<Facade>> {
     -repository: IRepositroyFlow
     -services: ApplicationServices
-    +getShellData(): Promise<ShellData>
-    +getNotificationCenter(currentUser?: UserProfile): Promise<NotificationCenterView>
-    +getLoginData(): Promise<AuthPageData>
-    +getRegisterData(): Promise<AuthPageData>
-    +createProject(input: CreateProjectInputWithoutOwner, ownerId: string): Promise<CreateProjectResult>
-    +cloneProject(input: CloneProjectRequestInput): Promise<CloneProjectResult>
-    +updateProject(input: UpdateProjectInput, actorId: string): Promise<Project>
-    +deleteProject(projectId: string): Promise<void>
-    +removeProjectMember(projectId: string, memberId: string): Promise<Project>
-    +updateProjectMemberRole(projectId: string, memberId: string, memberRole: UserRole): Promise<Project>
+    +createProject(input: CreateProjectInput, ownerId: string): Promise<CreateProjectResult>
     +createBoard(input: CreateBoardInput, actorId: string): Promise<Board>
-    +createBoardColumn(input: CreateBoardColumnInput): Promise<Board>
-    +updateBoardColumn(input: UpdateBoardColumnInput): Promise<Board>
-    +reorderBoardColumns(input: ReorderBoardColumnsInput): Promise<Board>
-    +deleteBoardColumn(input: DeleteBoardColumnInput): Promise<Board>
     +createTask(input: CreateTaskInput): Promise<Task>
-    +updateTask(input: UpdateTaskInput): Promise<Task>
-    +deleteTask(input: DeleteTaskInput): Promise<void>
-    +moveTask(input: MoveTaskInput): Promise<Task>
-    +cloneTask(input: CloneTaskRequestInput): Promise<Task>
-    +getBoardPageData(projectId: string, boardId: string, filters: TaskFilters, currentUser?: UserProfile): Promise<BoardPageView?>
-    +getProjectsPageData(search, currentUser?): Promise<ProjectsPageView>
-    +getBoardsPageData(currentUser?: UserProfile): Promise<BoardsPageView>
-    +getSettingsPageData(): Promise<SettingsView>
+    +getBoardPageData(projectId: string, boardId: string, filters: TaskFilters): Promise<BoardPageView>
     +getWorkspaceReport(currentUser?: UserProfile): Promise<WorkspaceReportView>
     +renderWorkspaceReport(format: ReportFormat, currentUser?: UserProfile): Promise<RenderedReport>
-    +updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings>
-    +updateThemePreference(userId: string, mode: ThemeMode): Promise<UserProfile>
-    +markNotificationRead(notificationId: string, recipientId: string): Promise<ProjectNotification>
-    +markAllNotificationsRead(recipientId: string): Promise<void>
-    +clearNotifications(recipientId: string): Promise<void>
-    +getSearchHighlights(projectId?: string, filters?: TaskFilters): Promise<BoardTaskView[]>
-    +getInvitationByToken(token: string): Promise<MemberInvitation?>
-    +registerUser(input: RegisterUserInput): Promise<RegisterUserResult>
     +login(input: PasswordAuthInput): Promise<AuthenticationResult>
-    +createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>
-    +createInvitations(input): Promise<MemberInvitation[]>
-    +revokeInvitation(invitationId: string): Promise<MemberInvitation>
-    +resendInvitation(invitationId: string): Promise<MemberInvitation>
-    +acceptInvitation(token: string): Promise<MemberInvitation?>
   }
 }
 
@@ -544,20 +450,12 @@ package "Application.Services" #F7F7F7 {
     +load(): Promise<TaskflowSnapshot>
   }
 
-  class ProjectQueryService {
-    -snapshotLoader: SnapshotLoader
-    +getProjectsPageData(search, currentUser?): Promise<ProjectsPageView>
-    +getBoardPageData(projectId: string, boardId: string, filters: TaskFilters, currentUser?): Promise<BoardPageView?>
-    +getSearchHighlights(projectId?: string, filters?: TaskFilters): Promise<BoardTaskView[]>
-  }
+  class ProjectQueryService
   class ProjectCommandService {
     -repository: IRepositroyFlow
     -notificationPublisher: ProjectEventPublisher
-    +createProject(input: CreateProjectInputWithoutOwner, ownerId: string): Promise<CreateProjectResult>
+    +createProject(input: CreateProjectInput, ownerId: string): Promise<CreateProjectResult>
     +updateProject(input: UpdateProjectInput, actorId: string): Promise<Project>
-    +deleteProject(projectId: string): Promise<void>
-    +removeProjectMember(projectId: string, memberId: string): Promise<Project>
-    +updateProjectMemberRole(projectId: string, memberId: string, memberRole: UserRole): Promise<Project>
   }
 
   class ProjectCloneService {
@@ -570,10 +468,6 @@ package "Application.Services" #F7F7F7 {
     -repository: IRepositroyFlow
     -notificationPublisher: ProjectEventPublisher
     +createBoard(input: CreateBoardInput, actorId: string): Promise<Board>
-    +createBoardColumn(input: CreateBoardColumnInput): Promise<Board>
-    +updateBoardColumn(input: UpdateBoardColumnInput): Promise<Board>
-    +reorderBoardColumns(input: ReorderBoardColumnsInput): Promise<Board>
-    +deleteBoardColumn(input: DeleteBoardColumnInput): Promise<Board>
   }
 
   class TaskCommandService {
@@ -582,78 +476,25 @@ package "Application.Services" #F7F7F7 {
     +createTask(input: CreateTaskInput): Promise<Task>
   }
 
-  class TaskUpdateService {
-    -repository: IRepositroyFlow
-    -snapshotLoader: SnapshotLoader
-    +updateTask(input: UpdateTaskInput): Promise<Task>
-  }
-  class TaskMoveService {
-    -repository: IRepositroyFlow
-    +moveTask(input: MoveTaskInput): Promise<Task>
-  }
-  class TaskDeleteService {
-    -repository: IRepositroyFlow
-    +deleteTask(input: DeleteTaskInput): Promise<void>
-  }
-  class TaskCloneService {
-    -repository: IRepositroyFlow
-    -snapshotLoader: SnapshotLoader
-    +cloneTask(input: CloneTaskRequestInput): Promise<Task>
-  }
-  class InvitationQueryService {
-    -repository: IRepositroyFlow
-    +getInvitationByToken(token: string): Promise<MemberInvitation?>
-  }
-  class InvitationCreationGuard {
-    -snapshotLoader: SnapshotLoader
-    +validate(draft: InvitationDraft): Promise<void>
-  }
+  class TaskUpdateService
+  class TaskMoveService
+  class TaskDeleteService
+  class TaskCloneService
+  class InvitationQueryService
   class InvitationCommandService {
     -repository: IRepositroyFlow
     -notificationPublisher: ProjectEventPublisher
     +createInvitation(input: CreateInvitationInput): Promise<MemberInvitation>
-    +createInvitations(input): Promise<MemberInvitation[]>
-    +revokeInvitation(invitationId: string): Promise<MemberInvitation>
-    +resendInvitation(invitationId: string): Promise<MemberInvitation>
-    +acceptInvitation(token: string): Promise<MemberInvitation?>
+    +acceptInvitation(token: string): Promise<MemberInvitation>
   }
-  class NotificationQueryService {
-    -snapshotLoader: SnapshotLoader
-    +getNotificationCenter(currentUser?: UserProfile): Promise<NotificationCenterView>
-  }
-  class NotificationCommandService {
-    -repository: IRepositroyFlow
-    +markNotificationRead(notificationId: string, recipientId: string): Promise<ProjectNotification>
-    +markAllNotificationsRead(recipientId: string): Promise<void>
-    +clearNotifications(recipientId: string): Promise<void>
-  }
-  class WorkspaceQueryService {
-    -snapshotLoader: SnapshotLoader
-    +getShellData(): Promise<ShellData>
-    +getBoardsPageData(currentUser?: UserProfile): Promise<BoardsPageView>
-    +getSettingsPageData(): Promise<SettingsView>
-  }
-  class SettingsCommandService {
-    -repository: IRepositroyFlow
-    +updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings>
-  }
-  class ThemePreferenceCommandService {
-    -repository: IRepositroyFlow
-    +updateThemePreference(userId: string, mode: ThemeMode): Promise<UserProfile>
-  }
-  class AuthCommandService {
-    -repository: IRepositroyFlow
-    +registerUser(input: RegisterUserInput): Promise<RegisterUserResult>
-  }
-  class AuthQueryService {
-    -snapshotLoader: SnapshotLoader
-    +getLoginData(): Promise<AuthPageData>
-    +getRegisterData(): Promise<AuthPageData>
-  }
-  class SessionCommandService {
-    -authProvider: TaskflowAuthProvider
-    +login(input: PasswordAuthInput): Promise<AuthenticationResult>
-  }
+  class NotificationQueryService
+  class NotificationCommandService
+  class WorkspaceQueryService
+  class SettingsCommandService
+  class ThemePreferenceCommandService
+  class AuthCommandService
+  class AuthQueryService
+  class SessionCommandService
 }
 
 ' ==========================================================
@@ -692,15 +533,11 @@ Board "1" *-- "*" BoardColumn : columns
 Project "1" *-- "*" Task : contains
 Task "1" *-- "*" Subtask : composite data
 Task "1" o-- "*" Label : labels
-Task "1" o-- "*" TaskComment : comments
-Task "1" o-- "*" TaskAttachment : attachments
 Task "1" o-- "*" TaskHistoryEntry : history
-Project "1" o-- "*" ProjectMember : memberships
 Project "1" *-- "*" MemberInvitation : invitations
 Project "1" *-- "*" ProjectNotification : notifications
 TaskflowSnapshot *-- UserProfile
 TaskflowSnapshot *-- Project
-TaskflowSnapshot *-- ProjectMember
 TaskflowSnapshot *-- Board
 TaskflowSnapshot *-- Task
 TaskflowSnapshot *-- MemberInvitation
@@ -708,18 +545,6 @@ TaskflowSnapshot *-- ProjectNotification
 TaskflowSnapshot *-- SystemSettings
 
 BoardTaskView --|> Task
-BoardColumnView --|> BoardColumn
-BoardColumnView *-- "*" BoardTaskView
-BoardPageView *-- Project
-BoardPageView *-- Board
-BoardPageView *-- "*" BoardColumnView
-ProjectCardView ..> Project
-ProjectMemberView ..> ProjectMember
-BoardsPageView *-- "*" ProjectCardView
-SettingsView *-- SystemSettings
-NotificationCenterView *-- "*" ProjectNotificationView
-ProjectNotificationView --|> ProjectNotification
-ProjectInvitationView --|> MemberInvitation
 
 ' ==========================================================
 ' PATTERN IMPLEMENTATION RELATIONSHIPS
@@ -789,16 +614,10 @@ TaskflowService o--> TaskMoveService
 TaskflowService o--> TaskDeleteService
 TaskflowService o--> TaskCloneService
 TaskflowService o--> InvitationCommandService
-TaskflowService o--> InvitationQueryService
-TaskflowService o--> NotificationQueryService
 TaskflowService o--> NotificationCommandService
 TaskflowService o--> ReportQueryService
 TaskflowService o--> AuthCommandService
-TaskflowService o--> AuthQueryService
 TaskflowService o--> SessionCommandService
-TaskflowService o--> WorkspaceQueryService
-TaskflowService o--> SettingsCommandService
-TaskflowService o--> ThemePreferenceCommandService
 
 ' Composite
 TaskComposite ..|> WorkItemComponent
@@ -847,47 +666,31 @@ ProjectCommandService ..> ProjectEventPublisher : publishes PROJECT_CREATED/UPDA
 ProjectCloneService ..> ProjectEventPublisher : publishes PROJECT_CREATED
 BoardCommandService ..> ProjectEventPublisher : publishes BOARD_CREATED
 TaskCommandService ..> ProjectEventPublisher : publishes TASK_CREATED
-InvitationCommandService ..> ProjectEventPublisher : publishes MEMBER_INVITED on create
+InvitationCommandService ..> ProjectEventPublisher : publishes MEMBER_INVITED/JOINED
 
 ' ==========================================================
 ' APPLICATION / INFRASTRUCTURE RELATIONSHIPS
 ' ==========================================================
 
 SnapshotLoader ..> IRepositroyFlow
-AuthQueryService ..> SnapshotLoader
-AuthCommandService ..> IRepositroyFlow
-SessionCommandService ..> TaskflowAuthProvider
-WorkspaceQueryService ..> SnapshotLoader
 ProjectQueryService ..> SnapshotLoader
 ProjectCommandService ..> IRepositroyFlow
 ProjectCloneService ..> IRepositroyFlow
-ProjectCloneService ..> SnapshotLoader
-ProjectCloneService ..> ProjectBuilder
 ProjectCloneService ..> ProjectPrototype
 ProjectCloneService ..> BoardPrototype
 ProjectCloneService ..> BoardColumnPrototype
 BoardCommandService ..> IRepositroyFlow
 TaskCommandService ..> IRepositroyFlow
 TaskUpdateService ..> IRepositroyFlow
-TaskUpdateService ..> SnapshotLoader
 TaskUpdateService ..> TaskUpdateBuilder
 TaskCloneService ..> IRepositroyFlow
-TaskCloneService ..> SnapshotLoader
 TaskCloneService ..> TaskPrototype
 TaskCloneService ..> SubtaskPrototype
-TaskMoveService ..> IRepositroyFlow
-TaskDeleteService ..> IRepositroyFlow
-InvitationQueryService ..> IRepositroyFlow
 InvitationCommandService ..> IRepositroyFlow
-InvitationCommandService ..> InvitationQueryService
-InvitationCommandService ..> InvitationCreationGuard
-InvitationCreationGuard ..> SnapshotLoader
-NotificationQueryService ..> SnapshotLoader
-NotificationCommandService ..> IRepositroyFlow
-ReportQueryService ..> SnapshotLoader
-ReportQueryService ..> ProjectAccessPolicy
+InvitationCommandService ..> InvitationPrototype
 SettingsCommandService ..> IRepositroyFlow
 ThemePreferenceCommandService ..> IRepositroyFlow
+SessionCommandService ..> TaskflowAuthProvider
 
 SupabaseTaskflowRepository o--> SupabaseSnapshotQuery
 SupabaseTaskflowRepository o--> SupabaseAuthCommand

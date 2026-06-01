@@ -467,7 +467,6 @@ La infraestructura no define el patron; lo ejecuta. Los patrones viven en el dom
 ## 13. Fuentes internas recomendadas
 
 - `docs/design-patterns-guide.md`
-- `docs/notebooklm-structural-patterns.md`
 - `docs/pattern-traceability.md`
 - `docs/taskflow-class-diagram.puml`
 - `docs/taskflow-architecture.md`

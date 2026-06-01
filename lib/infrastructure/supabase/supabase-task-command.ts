@@ -32,8 +32,28 @@ export class SupabaseTaskCommand {
     }
 
     const draftTask = this.buildDraftTask(input, targetColumnId);
+<<<<<<< HEAD
     const { data: taskRow, error: taskError } =
       await this.createTaskWithCompatibleRpc(draftTask, input);
+=======
+    const { data: taskRow, error: taskError } = await this.client.rpc(
+      "create_project_task_with_notifications",
+      {
+        target_project_id: draftTask.projectId,
+        target_board_id: draftTask.boardId,
+        target_column_id: draftTask.columnId,
+        target_title: draftTask.title,
+        target_description: draftTask.description,
+        target_priority: draftTask.priority,
+        target_type: draftTask.type,
+        target_due_date: draftTask.dueDate,
+        target_estimate_hours: draftTask.estimateHours,
+        target_spent_hours: draftTask.spentHours,
+        target_assignee_ids: draftTask.assigneeIds,
+        target_subtasks: this.serializeSubtasks(input.subtasks ?? []),
+      },
+    );
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
     if (taskError || !taskRow) {
       throw new Error(taskError?.message ?? "No fue posible crear la tarea.");
@@ -223,6 +243,7 @@ export class SupabaseTaskCommand {
     return builder.build();
   }
 
+<<<<<<< HEAD
   private async createTaskWithCompatibleRpc(
     draftTask: Task,
     input: CreateTaskInput,
@@ -284,6 +305,8 @@ export class SupabaseTaskCommand {
     );
   }
 
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   private serializeSubtasks(subtasks: TaskSubtaskInput[]) {
     // Supabase RPCs expect snake_case keys because jsonb_to_recordset maps
     // directly to SQL column names.

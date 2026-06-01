@@ -8,7 +8,10 @@ import type { BoardColumnView } from "@/lib/domain/models";
 type ColumnRow = {
   id: string;
   name: string;
+<<<<<<< HEAD
   wipLimit: string;
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   taskCount: number;
 };
 
@@ -19,7 +22,10 @@ function mapColumns(columns: BoardColumnView[]): ColumnRow[] {
     .map((column) => ({
       id: column.id,
       name: column.name,
+<<<<<<< HEAD
       wipLimit: String(column.wipLimit ?? ""),
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       taskCount: column.tasks.length,
     }));
 }
@@ -68,7 +74,10 @@ export function BoardColumnManagerModal({
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ColumnRow[]>(() => mapColumns(columns));
   const [newColumnName, setNewColumnName] = useState("");
+<<<<<<< HEAD
   const [newColumnWipLimit, setNewColumnWipLimit] = useState("4");
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -92,10 +101,14 @@ export function BoardColumnManagerModal({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+<<<<<<< HEAD
         body: JSON.stringify({
           name: newColumnName,
           wipLimit: Number(newColumnWipLimit),
         }),
+=======
+        body: JSON.stringify({ name: newColumnName }),
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       },
     );
 
@@ -108,11 +121,15 @@ export function BoardColumnManagerModal({
     }
 
     setNewColumnName("");
+<<<<<<< HEAD
     setNewColumnWipLimit("4");
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
     setPendingAction(null);
     startTransition(() => router.refresh());
   }
 
+<<<<<<< HEAD
   async function handleSaveColumn(row: ColumnRow) {
     setPendingAction(`save:${row.id}`);
     setError(null);
@@ -126,13 +143,29 @@ export function BoardColumnManagerModal({
           name: row.name,
           wipLimit: Number(row.wipLimit),
         }),
+=======
+  async function handleRename(columnId: string, name: string) {
+    setPendingAction(`rename:${columnId}`);
+    setError(null);
+
+    const response = await fetch(
+      `/api/projects/${projectId}/boards/${boardId}/columns/${columnId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       },
     );
 
     const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
+<<<<<<< HEAD
       setError(payload?.error ?? "No fue posible actualizar la columna.");
+=======
+      setError(payload?.error ?? "No fue posible renombrar la columna.");
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       setPendingAction(null);
       return;
     }
@@ -246,7 +279,11 @@ export function BoardColumnManagerModal({
         >
           <div className="space-y-5">
             <div className="rounded-[1.5rem] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-5">
+<<<<<<< HEAD
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_10rem_auto] lg:items-end">
+=======
+              <div className="flex flex-wrap items-end gap-3">
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                 <div className="min-w-0 flex-1">
                   <label className="mb-2 block text-sm font-medium text-[color:var(--color-text-primary)]">
                     Nueva columna
@@ -258,6 +295,7 @@ export function BoardColumnManagerModal({
                     className="taskflow-input"
                   />
                 </div>
+<<<<<<< HEAD
                 <div>
                   <label className="mb-2 block text-sm font-medium text-[color:var(--color-text-primary)]">
                     WIP
@@ -270,6 +308,8 @@ export function BoardColumnManagerModal({
                     className="taskflow-input"
                   />
                 </div>
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                 <button
                   type="button"
                   onClick={() => void handleCreateColumn()}
@@ -336,6 +376,7 @@ export function BoardColumnManagerModal({
                         <span className="text-sm text-[color:var(--color-text-secondary)]">
                           {row.taskCount} tarea(s) en esta columna
                         </span>
+<<<<<<< HEAD
                         <span className="text-sm text-[color:var(--color-text-secondary)]">
                           WIP {row.wipLimit}
                         </span>
@@ -373,16 +414,41 @@ export function BoardColumnManagerModal({
                           required
                         />
                       </div>
+=======
+                      </div>
+                      <input
+                        value={row.name}
+                        onChange={(event) =>
+                          setRows((current) =>
+                            current.map((item) =>
+                              item.id === row.id
+                                ? { ...item, name: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        className="taskflow-input"
+                        required
+                      />
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                       <button
                         type="button"
+<<<<<<< HEAD
                         onClick={() => void handleSaveColumn(row)}
                         disabled={pendingAction !== null}
                         className="rounded-2xl border border-[color:var(--color-border)] px-3 py-2 text-sm font-medium disabled:opacity-60"
                       >
                         Guardar
+=======
+                        onClick={() => void handleRename(row.id, row.name)}
+                        disabled={pendingAction !== null}
+                        className="rounded-2xl border border-[color:var(--color-border)] px-3 py-2 text-sm font-medium disabled:opacity-60"
+                      >
+                        Guardar nombre
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                       </button>
                       <button
                         type="button"

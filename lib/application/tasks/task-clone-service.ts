@@ -1,7 +1,10 @@
 import type { CloneTaskRequestInput, Subtask } from "@/lib/domain/models";
 import type { IRepositroyFlow } from "@/lib/domain/repositories";
 import { SnapshotLoader } from "@/lib/application/shared/snapshot-loader";
+<<<<<<< HEAD
 import { assertColumnWipCapacity } from "@/lib/application/tasks/wip-limit-guard";
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 import { SubtaskPrototype, TaskPrototype } from "@/lib/patterns/prototype/clone";
 
 export class TaskCloneService {
@@ -23,12 +26,15 @@ export class TaskCloneService {
     // Deep task cloning starts from the source task and its selected subtasks,
     // generating fresh technical identities while preserving business shape.
     const clonedSubtasks = this.buildClonedSubtasks(sourceTask.subtasks, input);
+<<<<<<< HEAD
     const targetColumnId = input.columnId ?? sourceTask.columnId;
 
     assertColumnWipCapacity(snapshot, {
       boardId: input.boardId,
       columnId: targetColumnId,
     });
+=======
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
     // The prototype creates a technical draft that preserves the source
     // structure while allowing reassignment to the same or different people.
@@ -36,7 +42,11 @@ export class TaskCloneService {
       id: crypto.randomUUID(),
       projectId: input.projectId,
       boardId: input.boardId,
+<<<<<<< HEAD
       columnId: targetColumnId,
+=======
+      columnId: input.columnId ?? sourceTask.columnId,
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
       title: input.title.trim(),
       description: input.description.trim(),
       priority: input.priority,

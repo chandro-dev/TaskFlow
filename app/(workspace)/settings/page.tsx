@@ -1,13 +1,18 @@
 import { requireAuthenticatedUser } from "@/lib/auth/current-user";
 import { SettingsForm } from "@/components/taskflow/settings-form";
 import { TaskflowService } from "@/lib/application/taskflow-service";
+<<<<<<< HEAD
 import { formatDateTime, initials, roleLabel } from "@/lib/utils/format";
+=======
+import { formatDateTime, roleLabel } from "@/lib/utils/format";
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
 const service = new TaskflowService();
 
 export default async function SettingsPage() {
   const currentUser = await requireAuthenticatedUser();
   const data = await service.getSettingsPageData();
+<<<<<<< HEAD
   const activeUsers = data.users.filter((user) => user.isActive).length;
   const inactiveUsers = data.users.length - activeUsers;
   const adminUsers = data.users.filter((user) => user.role === "ADMIN").length;
@@ -84,16 +89,94 @@ export default async function SettingsPage() {
           </div>
 
           <div className="mt-6">
+=======
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-secondary)]">
+          Administración
+        </p>
+        <h1 className="mt-3 font-[family-name:var(--font-display)] text-5xl font-semibold text-[color:var(--color-text-primary)]">
+          Configuración del sistema
+        </h1>
+        <p className="mt-3 max-w-3xl text-lg leading-8 text-[color:var(--color-text-secondary)]">
+          RF-09 cubierto con gestión de usuarios, parámetros globales y soporte
+          de temas visuales claro/oscuro desde una capa preparada para Supabase.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <section className="taskflow-panel p-6">
+          <p className="text-sm text-[color:var(--color-text-secondary)]">
+            Nombre de plataforma
+          </p>
+          <div className="mt-3 text-3xl font-semibold">{data.settings.platformName}</div>
+        </section>
+        <section className="taskflow-panel p-6">
+          <p className="text-sm text-[color:var(--color-text-secondary)]">
+            Límite de adjuntos
+          </p>
+          <div className="mt-3 text-3xl font-semibold">
+            {data.settings.maxAttachmentMb} MB
+          </div>
+        </section>
+        <section className="taskflow-panel p-6">
+          <p className="text-sm text-[color:var(--color-text-secondary)]">
+            Tema predeterminado
+          </p>
+          <div className="mt-3 text-3xl font-semibold capitalize">
+            {data.settings.defaultTheme}
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
+        <section className="taskflow-panel p-6">
+          <h2 className="text-2xl font-semibold">Parámetros globales</h2>
+          <div className="mt-6 space-y-5">
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
             <SettingsForm
               settings={data.settings}
               currentUser={data.currentUser}
             />
+<<<<<<< HEAD
+=======
+            <div>
+              <p className="text-sm text-[color:var(--color-text-secondary)]">
+                Política de contraseñas
+              </p>
+              <p className="mt-2 text-base leading-7">
+                {data.settings.passwordPolicy}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-[color:var(--color-text-secondary)]">
+                Tema y experiencia visual
+              </p>
+              <p className="mt-2 text-base leading-7">
+                La aplicación implementa modo claro y oscuro con una Abstract
+                Factory que centraliza tokens visuales y mantiene consistencia
+                entre vistas.
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-[color:var(--color-text-secondary)]">
+                Permisos
+              </p>
+              <p className="mt-2 text-base leading-7">
+                Los roles `ADMIN`, `PROJECT_MANAGER` y `DEVELOPER` separan la
+                gestión global, el control de proyectos y la ejecución diaria.
+              </p>
+            </div>
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
           </div>
         </section>
 
         <section className="taskflow-panel p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
+<<<<<<< HEAD
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-secondary)]">
                 Accesos
               </p>
@@ -113,11 +196,27 @@ export default async function SettingsPage() {
 
           <div className="mt-6 overflow-x-auto rounded-[1.5rem] border border-[color:var(--color-border)]">
             <table className="w-full min-w-[720px] text-left">
+=======
+              <h2 className="text-2xl font-semibold">Usuarios del sistema</h2>
+              <p className="mt-2 text-sm text-[color:var(--color-text-secondary)]">
+                Crear, editar y desactivar cuentas desde el panel administrativo.
+              </p>
+            </div>
+            <div className="taskflow-chip">{currentUser.role}</div>
+          </div>
+
+          <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-[color:var(--color-border)]">
+            <table className="w-full text-left">
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
               <thead className="bg-[color:var(--color-surface-muted)] text-sm text-[color:var(--color-text-secondary)]">
                 <tr>
                   <th className="px-4 py-4 font-medium">Usuario</th>
                   <th className="px-4 py-4 font-medium">Rol</th>
+<<<<<<< HEAD
                   <th className="px-4 py-4 font-medium">Ultimo acceso</th>
+=======
+                  <th className="px-4 py-4 font-medium">Último acceso</th>
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                   <th className="px-4 py-4 font-medium">Estado</th>
                 </tr>
               </thead>
@@ -128,6 +227,7 @@ export default async function SettingsPage() {
                     className="border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)]"
                   >
                     <td className="px-4 py-4">
+<<<<<<< HEAD
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-surface-muted)] text-sm font-semibold">
                           {initials(user.name)}
@@ -145,6 +245,14 @@ export default async function SettingsPage() {
                         {roleLabel(user.role)}
                       </span>
                     </td>
+=======
+                      <div className="font-medium">{user.name}</div>
+                      <div className="text-sm text-[color:var(--color-text-secondary)]">
+                        {user.email}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">{roleLabel(user.role)}</td>
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                     <td className="px-4 py-4 text-sm text-[color:var(--color-text-secondary)]">
                       {formatDateTime(user.lastAccess)}
                     </td>
@@ -166,6 +274,7 @@ export default async function SettingsPage() {
           </div>
         </section>
       </div>
+<<<<<<< HEAD
 
       <section className="grid gap-5 xl:grid-cols-3">
         <InfoPanel
@@ -232,3 +341,8 @@ function themeLabel(theme: string) {
 
   return labels[theme] ?? theme;
 }
+=======
+    </div>
+  );
+}
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29

@@ -15,6 +15,13 @@ import type {
   TaskSubtaskInput,
   UserProfile,
 } from "@/lib/domain/models";
+<<<<<<< HEAD
+=======
+import { TaskHistoryCaretaker } from "@/lib/patterns/memento/task-history-caretaker";
+import { TaskOriginator } from "@/lib/patterns/memento/task-originator";
+
+const taskHistoryCaretaker = TaskHistoryCaretaker.getInstance();
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
 export function TaskEditorModal({
   task,
@@ -34,6 +41,10 @@ export function TaskEditorModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<TaskFormState>(() => createTaskFormFromTask(task));
+<<<<<<< HEAD
+=======
+  const [canUndo, setCanUndo] = useState(false);
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
 
   function updateField<K extends keyof TaskFormState>(
     key: K,
@@ -105,9 +116,56 @@ export function TaskEditorModal({
       return;
     }
 
+<<<<<<< HEAD
     setLoading(false);
     setOpen(false);
     startTransition(() => router.refresh());
+=======
+    // El snapshot ya fue guardado en el servidor por TaskUpdateService.
+    // Aquí solo reflejamos localmente que hay un undo disponible.
+    setCanUndo(taskHistoryCaretaker.getHistorySize(task.id) > 0);
+    setLoading(false);
+    setOpen(false);
+    startTransition(() => {
+      router.refresh();
+      window.dispatchEvent(new CustomEvent("taskflow-action"));
+    });
+  }
+
+  async function undoLastChange() {
+    if (!canUndo) return;
+
+    setLoading(true);
+    setError(null);
+
+    // Delegamos la restauración al backend: el Originator y el Caretaker
+    // viven en el servidor y son los únicos que conocen el estado previo.
+    const response = await fetch(
+      `/api/projects/${projectId}/boards/${boardId}/tasks/${task.id}/undo`,
+      { method: "POST" },
+    );
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError(payload?.error ?? "No fue posible deshacer la tarea.");
+      setLoading(false);
+      return;
+    }
+
+    // Restauramos el formulario local con el estado que devolvió el servidor
+    if (payload) {
+      const originator = new TaskOriginator(payload);
+      setForm(originator.getFormState());
+    }
+
+    setCanUndo(taskHistoryCaretaker.getHistorySize(task.id) > 0);
+    setLoading(false);
+    startTransition(() => {
+      router.refresh();
+      window.dispatchEvent(new CustomEvent("taskflow-action"));
+    });
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   }
 
   function openEditor() {
@@ -153,6 +211,17 @@ export function TaskEditorModal({
             <div className="flex justify-end gap-3 border-t border-[color:var(--color-border)] pt-5">
               <button
                 type="button"
+<<<<<<< HEAD
+=======
+                onClick={undoLastChange}
+                disabled={!canUndo || loading}
+                className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium disabled:opacity-50"
+              >
+                Deshacer último cambio
+              </button>
+              <button
+                type="button"
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
                 onClick={() => setOpen(false)}
                 className="rounded-2xl border border-[color:var(--color-border)] px-4 py-3 text-sm font-medium"
               >

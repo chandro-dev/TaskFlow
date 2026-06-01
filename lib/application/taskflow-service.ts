@@ -111,6 +111,13 @@ export class TaskflowService {
     return this.services.taskUpdates.updateTask(input);
   }
 
+<<<<<<< HEAD
+=======
+  async undoTask(input: { taskId: string; projectId: string; boardId: string; actorId: string }) {
+    return this.services.taskUpdates.undoTask(input);
+  }
+
+>>>>>>> 84a25b47994113f208b85e4dd092ef33ab896f29
   async deleteTask(input: DeleteTaskInput) {
     return this.services.taskDeletes.deleteTask(input);
   }
